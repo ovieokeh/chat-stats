@@ -73,6 +73,25 @@ export interface ReplyEdge {
   sameSession: boolean;
 }
 
+export interface InteractionType {
+  // Placeholder if needed for future
+}
+
+export type MomentType = "volume_spike" | "long_gap" | "marathon_session" | "sentiment_spike";
+
+export interface Moment {
+  id?: string; // unique ID for keying
+  importId: ImportId;
+  type: MomentType;
+  date: string; // "YYYY-MM-DD" or ISO
+  ts: number; // relevant timestamp (start of day, or message ts)
+  title: string;
+  description: string;
+  magnitude: number; // e.g., z-score, duration in mins, gap in hours
+  importance: number; // 0-1 score for sorting
+  data?: any; // context (e.g., specific message snippet)
+}
+
 export interface DerivedMetric {
   id?: number;
   importId: ImportId;
@@ -94,6 +113,7 @@ export interface ExportConfig {
   parsing: {
     dateFormat: string; // "DD/MM/YYYY" or "MM/DD/YYYY"
     timezone: string;
+    locale?: string;
     strictMode: boolean;
   };
   session: {
@@ -114,6 +134,7 @@ export const DEFAULT_CONFIG: ExportConfig = {
   parsing: {
     dateFormat: "DD/MM/YYYY",
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    locale: "en-US", // Default fallback, user can change
     strictMode: false,
   },
   session: {

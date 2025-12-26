@@ -12,7 +12,7 @@ export default function Home() {
   const imports = useLiveQuery(() => db.imports.orderBy("importedAt").reverse().toArray());
 
   return (
-    <main className="min-h-screen bg-base-200/50">
+    <main className="min-h-screen bg-base-200/50 overflow-y-scroll">
       <div className="max-w-4xl mx-auto px-4 py-16 space-y-12">
         <div className="text-center space-y-4">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">WhatsApp Insights</h1>

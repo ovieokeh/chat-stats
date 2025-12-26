@@ -7,14 +7,62 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { Overview } from "../../components/Dashboard/Overview";
 import { ParticipantStats } from "../../components/Dashboard/ParticipantStats";
 import { ChatViewer } from "../../components/Dashboard/ChatViewer";
+import { MomentsFeed } from "../../components/Dashboard/MomentsFeed";
 import { format } from "date-fns";
 import { Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { formatDurationSimple } from "../../lib/format";
+import { ConfigPanel } from "../../components/ConfigPanel";
+import { ExportConfig } from "../../types";
+import { Settings } from "lucide-react";
+
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function ImportDashboard() {
   const params = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const importId = parseInt(Array.isArray(params.id) ? params.id[0] : params.id);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Tab state synced with URL
+  const tabParam = searchParams.get("tab");
+  const activeTab = tabParam === "moments" || tabParam === "history" ? tabParam : "overview";
+
+  const setActiveTab = (tab: string) => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set("tab", tab);
+    router.replace(`?${newParams.toString()}`, { scroll: false });
+  };
+
+  const [isRecomputing, setIsRecomputing] = useState(false);
+
+  const handleConfigSave = async (newConfig: ExportConfig) => {
+    if (!importId) return;
+
+    try {
+      setIsRecomputing(true);
+      // Update DB
+      await db.imports.update(importId, {
+        configJson: JSON.stringify(newConfig),
+      });
+
+      // Trigger re-computation
+      // Dynamically import the heavy function only when needed (optional, but good practice if it was huge)
+      // For now, direct usage is fine as verified in plan.
+      const { recomputeImportAnalysis } = await import("../../lib/recompute");
+      await recomputeImportAnalysis(importId);
+
+      // alert("Settings saved and analysis re-computed.");
+      setIsSettingsOpen(false);
+    } catch (e) {
+      console.error("Failed to recompute", e);
+      alert("Error saving settings");
+    } finally {
+      setIsRecomputing(false);
+    }
+  };
 
   // Fetch data
   const importRecord = useLiveQuery(() => db.imports.get(importId), [importId]);
@@ -118,20 +166,102 @@ export default function ImportDashboard() {
         </div>
       </div>
 
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Overview</h2>
-        <Overview stats={stats} timelineData={stats.timelineData} hourlyData={stats.hourlyData} />
-      </section>
+      <div className="absolute top-8 right-4 md:right-8">
+        <button className="btn btn-ghost btn-circle" onClick={() => setIsSettingsOpen(true)}>
+          <Settings className="w-5 h-5 text-base-content/70" />
+        </button>
+      </div>
 
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Participants</h2>
-        <ParticipantStats participants={participantsData || []} />
-      </section>
+      {/* Tab Navigation */}
+      <div role="tablist" className="tabs tabs-boxed bg-base-200/50 p-1 mb-6 inline-block">
+        <a
+          role="tab"
+          className={`tab ${activeTab === "overview" ? "tab-active bg-base-100 shadow-sm" : ""}`}
+          onClick={() => setActiveTab("overview")}
+        >
+          Overview
+        </a>
+        <a
+          role="tab"
+          className={`tab ${activeTab === "moments" ? "tab-active bg-base-100 shadow-sm" : ""}`}
+          onClick={() => setActiveTab("moments")}
+        >
+          Moments
+          <span className="ml-2 badge badge-xs badge-primary">Beta</span>
+        </a>
+        <a
+          role="tab"
+          className={`tab ${activeTab === "history" ? "tab-active bg-base-100 shadow-sm" : ""}`}
+          onClick={() => setActiveTab("history")}
+        >
+          History
+        </a>
+      </div>
 
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Explorer</h2>
-        <ChatViewer importId={importId} />
-      </section>
+      {activeTab === "overview" && (
+        <section className="animate-in fade-in duration-300">
+          <h2 className="text-xl font-semibold mb-4">Participants</h2>
+          <ParticipantStats participants={participantsData || []} />
+
+          <div className="mt-8">
+            <h2 className="sr-only">Overview</h2>
+            <Overview stats={stats} timelineData={stats.timelineData} hourlyData={stats.hourlyData} />
+          </div>
+        </section>
+      )}
+
+      {activeTab === "moments" && (
+        <section className="animate-in fade-in duration-300">
+          <div className="mb-6 max-w-2xl">
+            <h2 className="text-2xl font-bold mb-2">Interesting Moments</h2>
+            <p className="text-base-content/60">Key events and anomalies detected in your conversation.</p>
+          </div>
+          {/* Grid is handled inside MomentsFeed now to include filters. */}
+          <MomentsFeed importId={importId} />
+        </section>
+      )}
+
+      {activeTab === "history" && (
+        <section className="animate-in fade-in duration-300 h-[600px]">
+          <ChatViewer importId={importId} />
+        </section>
+      )}
+
+      {/* Settings Modal */}
+      <dialog id="settings_modal" className="modal modal-bottom sm:modal-middle" open={isSettingsOpen}>
+        <div className="modal-box p-0 w-11/12 max-w-2xl bg-base-100">
+          <form method="dialog">
+            <button
+              className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+              onClick={() => setIsSettingsOpen(false)}
+            >
+              ✕
+            </button>
+          </form>
+
+          <div className="p-6">
+            <h3 className="font-bold text-lg mb-4">Dashboard Settings</h3>
+            {importRecord?.configJson && (
+              <ConfigPanel
+                config={JSON.parse(importRecord.configJson)}
+                onSave={handleConfigSave}
+                onReset={() => console.log("Reset in modal not fully implied, uses default")}
+              />
+            )}
+            {isRecomputing && (
+              <div className="absolute inset-0 bg-base-100/80 flex items-center justify-center z-10 rounded-xl">
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <p className="font-medium animate-pulse">Re-analyzing conversation...</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button onClick={() => setIsSettingsOpen(false)}>close</button>
+        </form>
+      </dialog>
     </main>
   );
 }

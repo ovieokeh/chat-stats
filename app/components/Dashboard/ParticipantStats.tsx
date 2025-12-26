@@ -17,7 +17,7 @@ interface ParticipantStatsProps {
 
 export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {participants.map((p) => (
         <div key={p.id} className="card bg-base-100 border border-base-300/60 shadow-lg rounded-3xl overflow-hidden">
           <div className="bg-base-200/50 p-6 border-b border-base-300/30">
