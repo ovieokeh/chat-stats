@@ -8,6 +8,7 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 import numpy as np
 from collections import Counter
+import os
 
 app = FastAPI()
 
@@ -25,9 +26,14 @@ model = None
 def get_model():
     global model
     if model is None:
-        # Using a small, fast model suitable for local deployment
-        print("Loading model...")
-        model = SentenceTransformer('all-MiniLM-L6-v2')
+        # Load from local path for offline support
+        model_path = os.getenv("MODEL_PATH", "./models/all-MiniLM-L6-v2")
+        print(f"Loading model from {model_path}...")
+        try:
+            model = SentenceTransformer(model_path)
+        except Exception as e:
+            print(f"Failed to load local model: {e}. Falling back to online download.")
+            model = SentenceTransformer('all-MiniLM-L6-v2')
         print("Model loaded.")
     return model
 

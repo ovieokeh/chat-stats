@@ -420,7 +420,7 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
 /**
  * Checks if the local Python service is available.
  */
-const SERVICE_URL = "http://localhost:8001"; // Default port for python service
+const SERVICE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export const checkServiceHealth = async (): Promise<boolean> => {
   try {

@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  analyzer-service:
+    build:
+      context: ./service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_PATH=/app/models/all-MiniLM-L6-v2
+    networks:
+      - analyzer-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://analyzer-service:8000
+    depends_on:
+      - analyzer-service
+    networks:
+      - analyzer-network
+
+networks:
+  analyzer-network:
+    driver: bridge
