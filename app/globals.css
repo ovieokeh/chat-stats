@@ -1,0 +1,75 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@plugin "daisyui";
+@plugin "daisyui/theme" {
+  name: "nord";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+}
+@plugin "daisyui/theme" {
+  name: "forest";
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+}
+
+/* Tiptap Task List Styles */
+ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start; /* Align checkbox with top of text */
+  margin-bottom: 0.5rem;
+}
+
+ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin-right: 0.5rem;
+  user-select: none;
+}
+
+ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
+}
+
+/* Checkbox Style */
+ul[data-type="taskList"] li > label input[type="checkbox"] {
+  appearance: none;
+  background-color: transparent;
+  margin: 0;
+  cursor: pointer;
+  width: 1.2em;
+  height: 1.2em;
+  position: relative;
+  top: 0.15em; /* Minor adjustment for alignment with text */
+  border: 1px solid currentColor; /* Use current text color for border */
+  border-radius: 0.15em;
+  display: grid;
+  place-content: center;
+}
+
+ul[data-type="taskList"] li > label input[type="checkbox"]::before {
+  content: "";
+  width: 0.65em;
+  height: 0.65em;
+  transform: scale(0);
+  transition: 120ms transform ease-in-out;
+  box-shadow: inset 1em 1em currentColor; /* Checkmark color */
+  transform-origin: center;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+ul[data-type="taskList"] li > label input[type="checkbox"]:checked::before {
+  transform: scale(1);
+}
+
+.tiptap p,
+[data-type="taskList"] p {
+  margin-top: 0;
+  margin-bottom: 0;
+}
