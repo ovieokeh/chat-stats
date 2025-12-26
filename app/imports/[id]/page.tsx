@@ -10,12 +10,13 @@ import { ChatViewer } from "../../components/Dashboard/ChatViewer";
 import { SessionsList } from "../../components/Dashboard/SessionsList";
 import { MomentsFeed } from "../../components/Dashboard/MomentsFeed";
 import { format } from "date-fns";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, X } from "lucide-react";
 import Link from "next/link";
 import { formatDurationSimple } from "../../lib/format";
 import { ConfigPanel } from "../../components/ConfigPanel";
 import { ExportConfig } from "../../types";
 import { Settings } from "lucide-react";
+import { Navbar } from "../../components/Dashboard/Navbar";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { extractTopics } from "../../lib/analysis";
@@ -278,144 +279,143 @@ export default function ImportDashboard() {
   }
 
   return (
-    <main className="max-w-6xl w-full mx-auto px-4 md:px-6 py-8 space-y-8 pb-32 overflow-y-scroll">
-      <div className="flex items-center gap-4">
-        <Link href="/" className="btn btn-circle btn-ghost">
-          <ArrowLeft className="w-6 h-6" />
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold">{importRecord.filename}</h1>
-          <p className="text-base-content/60 text-sm">
-            Imported {format(importRecord.importedAt, "MMM d, yyyy HH:mm")}
-          </p>
+    <div className="flex flex-col h-screen overflow-hidden bg-base-100">
+      <Navbar
+        filename={importRecord.filename}
+        importedAt={importRecord.importedAt}
+        onSettingsClick={() => setIsSettingsOpen(true)}
+      />
+
+      <main className="flex-1 overflow-y-auto w-full max-w-6xl mx-auto px-4 md:px-6 py-6 pb-20">
+        <div className="flex flex-col gap-6">
+          {/* Tab Navigation */}
+          <div role="tablist" className="tabs tabs-boxed bg-base-200/50 p-1 inline-block w-fit">
+            <a
+              role="tab"
+              className={`tab ${activeTab === "overview" ? "tab-active bg-base-100 shadow-sm" : ""}`}
+              onClick={() => setActiveTab("overview")}
+            >
+              Overview
+            </a>
+            <a
+              role="tab"
+              className={`tab ${activeTab === "sessions" ? "tab-active bg-base-100 shadow-sm" : ""}`}
+              onClick={() => setActiveTab("sessions")}
+            >
+              Sessions
+            </a>
+            <a
+              role="tab"
+              className={`tab ${activeTab === "moments" ? "tab-active bg-base-100 shadow-sm" : ""}`}
+              onClick={() => setActiveTab("moments")}
+            >
+              Moments
+              <span className="ml-2 badge badge-xs badge-primary">Beta</span>
+            </a>
+            <a
+              role="tab"
+              className={`tab ${activeTab === "history" ? "tab-active bg-base-100 shadow-sm" : ""}`}
+              onClick={() => setActiveTab("history")}
+            >
+              History
+            </a>
+          </div>
+
+          <div className="flex-1 min-h-0">
+            {activeTab === "overview" && (
+              <section className="animate-in fade-in duration-300">
+                <h2 className="text-xl font-semibold mb-4">Participants</h2>
+                <ParticipantStats participants={participantsData || []} />
+
+                <div className="mt-8">
+                  <h2 className="sr-only">Overview</h2>
+                  <Overview
+                    stats={stats}
+                    timelineData={stats.timelineData}
+                    hourlyData={stats.hourlyData}
+                    heatmapData={stats.heatmaps}
+                    participants={participantsData}
+                    topics={topicsData || []}
+                    topicsLoading={topicsData === undefined}
+                    onTopicClick={(topic) => {
+                      const newParams = new URLSearchParams(searchParams.toString());
+                      newParams.set("tab", "history");
+                      newParams.set("q", topic);
+                      router.replace(`?${newParams.toString()}`);
+                    }}
+                    onBlockTopic={async (topic) => {
+                      // Add to global stopwords
+                      try {
+                        await db.stopwords.add({ word: topic.toLowerCase() });
+                      } catch (e) {
+                        /* ignore duplicate */
+                      }
+                    }}
+                  />
+                </div>
+              </section>
+            )}
+
+            {activeTab === "sessions" && (
+              <section className="animate-in fade-in duration-300">
+                <SessionsList importId={importId} />
+              </section>
+            )}
+
+            {activeTab === "moments" && (
+              <section className="animate-in fade-in duration-300">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold mb-2">Interesting Moments</h2>
+                  <p className="text-base-content/60">Key events and anomalies detected in your conversation.</p>
+                </div>
+                {/* Grid is handled inside MomentsFeed now to include filters. */}
+                <MomentsFeed importId={importId} />
+              </section>
+            )}
+
+            {activeTab === "history" && (
+              <section className="animate-in fade-in duration-300 h-full flex flex-col">
+                {searchParams.get("start") && (
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="badge badge-lg badge-primary gap-2 p-3 font-semibold shadow-sm">
+                        Session View
+                        <button
+                          className="hover:scale-110 transition-transform"
+                          onClick={() => {
+                            const newParams = new URLSearchParams(searchParams.toString());
+                            newParams.delete("start");
+                            newParams.delete("end");
+                            router.replace(`?${newParams.toString()}`);
+                          }}
+                          title="Exit session view"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <span className="text-xs opacity-60 hidden sm:inline">Showing specific time range</span>
+                    </div>
+                  </div>
+                )}
+                <div className="flex-1 min-h-0">
+                  <ChatViewer
+                    importId={importId}
+                    timeRange={
+                      searchParams.get("start") && searchParams.get("end")
+                        ? {
+                            startTs: parseInt(searchParams.get("start")!),
+                            endTs: parseInt(searchParams.get("end")!),
+                          }
+                        : undefined
+                    }
+                    initialSearchTerm={searchParams.get("q") || ""}
+                  />
+                </div>
+              </section>
+            )}
+          </div>
         </div>
-      </div>
-
-      <div className="absolute top-8 right-4 md:right-8">
-        <button className="btn btn-ghost btn-circle" onClick={() => setIsSettingsOpen(true)}>
-          <Settings className="w-5 h-5 text-base-content/70" />
-        </button>
-      </div>
-
-      {/* Tab Navigation */}
-      <div role="tablist" className="tabs tabs-boxed bg-base-200/50 p-1 mb-6 inline-block">
-        <a
-          role="tab"
-          className={`tab ${activeTab === "overview" ? "tab-active bg-base-100 shadow-sm" : ""}`}
-          onClick={() => setActiveTab("overview")}
-        >
-          Overview
-        </a>
-        <a
-          role="tab"
-          className={`tab ${activeTab === "sessions" ? "tab-active bg-base-100 shadow-sm" : ""}`}
-          onClick={() => setActiveTab("sessions")}
-        >
-          Sessions
-        </a>
-        <a
-          role="tab"
-          className={`tab ${activeTab === "moments" ? "tab-active bg-base-100 shadow-sm" : ""}`}
-          onClick={() => setActiveTab("moments")}
-        >
-          Moments
-          <span className="ml-2 badge badge-xs badge-primary">Beta</span>
-        </a>
-        <a
-          role="tab"
-          className={`tab ${activeTab === "history" ? "tab-active bg-base-100 shadow-sm" : ""}`}
-          onClick={() => setActiveTab("history")}
-        >
-          History
-        </a>
-      </div>
-
-      {activeTab === "overview" && (
-        <section className="animate-in fade-in duration-300">
-          <h2 className="text-xl font-semibold mb-4">Participants</h2>
-          <ParticipantStats participants={participantsData || []} />
-
-          <div className="mt-8">
-            <h2 className="sr-only">Overview</h2>
-            <Overview
-              stats={stats}
-              timelineData={stats.timelineData}
-              hourlyData={stats.hourlyData}
-              heatmapData={stats.heatmaps}
-              participants={participantsData}
-              topics={topicsData || []}
-              topicsLoading={topicsData === undefined}
-              onTopicClick={(topic) => {
-                const newParams = new URLSearchParams(searchParams.toString());
-                newParams.set("tab", "history");
-                newParams.set("q", topic);
-                router.replace(`?${newParams.toString()}`);
-              }}
-              onBlockTopic={async (topic) => {
-                // Add to global stopwords
-                try {
-                  await db.stopwords.add({ word: topic.toLowerCase() });
-                } catch (e) {
-                  /* ignore duplicate */
-                }
-              }}
-            />
-          </div>
-        </section>
-      )}
-
-      {activeTab === "sessions" && (
-        <section className="animate-in fade-in duration-300">
-          <SessionsList importId={importId} />
-        </section>
-      )}
-
-      {activeTab === "moments" && (
-        <section className="animate-in fade-in duration-300">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold mb-2">Interesting Moments</h2>
-            <p className="text-base-content/60">Key events and anomalies detected in your conversation.</p>
-          </div>
-          {/* Grid is handled inside MomentsFeed now to include filters. */}
-          <MomentsFeed importId={importId} />
-        </section>
-      )}
-
-      {activeTab === "history" && (
-        <section className="animate-in fade-in duration-300 h-[calc(100vh-180px)] min-h-[500px] flex flex-col">
-          {searchParams.get("start") && (
-            <div className="mb-2 flex items-center gap-2">
-              <div className="badge badge-lg badge-primary gap-2 p-3">
-                Session View
-                <button
-                  className="btn btn-circle btn-xs btn-ghost text-white"
-                  onClick={() => {
-                    const newParams = new URLSearchParams(searchParams.toString());
-                    newParams.delete("start");
-                    newParams.delete("end");
-                    router.replace(`?${newParams.toString()}`);
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-              <span className="text-xs opacity-60">Showing specific time range</span>
-            </div>
-          )}
-          <ChatViewer
-            importId={importId}
-            timeRange={
-              searchParams.get("start") && searchParams.get("end")
-                ? {
-                    startTs: parseInt(searchParams.get("start")!),
-                    endTs: parseInt(searchParams.get("end")!),
-                  }
-                : undefined
-            }
-            initialSearchTerm={searchParams.get("q") || ""}
-          />
-        </section>
-      )}
+      </main>
 
       {/* Settings Modal */}
       <dialog id="settings_modal" className="modal modal-bottom sm:modal-middle" open={isSettingsOpen}>
@@ -452,6 +452,6 @@ export default function ImportDashboard() {
           <button onClick={() => setIsSettingsOpen(false)}>close</button>
         </form>
       </dialog>
-    </main>
+    </div>
   );
 }

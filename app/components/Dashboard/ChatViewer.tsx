@@ -53,6 +53,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearchTerm || "");
   const [hasJumped, setHasJumped] = useState(false);
   const [primaryViewerId, setPrimaryViewerId] = useState<number | null>(null);
+  const [showFullHistory, setShowFullHistory] = useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   // Scroll to top on page change
@@ -167,14 +168,11 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
   );
 
   // ... (primary viewer logic) ...
-
   const messages = useLiveQuery(async () => {
-    // Sorting: Dexie indices are ASC by default.
-    // [importId+ts] ensures meaningful sort by time.
     let collection = db.messages.where("[importId+ts]");
 
     let rangeCollection;
-    if (timeRange) {
+    if (timeRange && !showFullHistory) {
       rangeCollection = collection.between([importId, timeRange.startTs], [importId, timeRange.endTs], true, true);
     } else {
       rangeCollection = collection.between([importId, Dexie.minKey], [importId, Dexie.maxKey]);
@@ -186,12 +184,12 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
 
     const offset = page * PAGE_SIZE;
     return rangeCollection.offset(offset).limit(PAGE_SIZE).toArray();
-  }, [importId, page, debouncedSearch, timeRange]);
+  }, [importId, page, debouncedSearch, timeRange, showFullHistory]);
 
   // Count for pagination
   const totalCount = useLiveQuery(async () => {
     let rangeCollection;
-    if (timeRange) {
+    if (timeRange && !showFullHistory) {
       rangeCollection = db.messages
         .where("[importId+ts]")
         .between([importId, timeRange.startTs], [importId, timeRange.endTs], true, true);
@@ -204,7 +202,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
     }
 
     return rangeCollection.filter((m) => m.rawText.toLowerCase().includes(debouncedSearch.toLowerCase())).count();
-  }, [importId, debouncedSearch, timeRange]);
+  }, [importId, debouncedSearch, timeRange, showFullHistory]);
 
   const totalPages = Math.ceil((totalCount || 0) / PAGE_SIZE);
 
@@ -233,19 +231,50 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
           </div>
         </div>
 
-        <div className="relative w-full max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/50" />
-          <input
-            type="text"
-            placeholder="Search messages..."
-            className="input input-bordered input-sm pl-9 w-full rounded-full"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(0);
-            }}
-            aria-label="Search messages"
-          />
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="relative w-full max-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/50" />
+            <input
+              type="text"
+              placeholder="Search..."
+              className="input input-bordered input-sm pl-9 w-full rounded-full"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(0);
+              }}
+              aria-label="Search messages"
+            />
+          </div>
+
+          {timeRange && (
+            <div className="flex items-center gap-2 bg-base-200/50 p-1 rounded-lg border border-base-300">
+              <button
+                className={`btn btn-xs rounded-md ${
+                  !showFullHistory ? "btn-primary shadow-sm" : "btn-ghost opacity-60"
+                }`}
+                onClick={() => {
+                  setShowFullHistory(false);
+                  setPage(0);
+                  setHasJumped(false); // Reset jump trigger if needed, or maybe not.
+                }}
+              >
+                Strict
+              </button>
+              <button
+                className={`btn btn-xs rounded-md ${
+                  showFullHistory ? "btn-primary shadow-sm" : "btn-ghost opacity-60"
+                }`}
+                onClick={() => {
+                  setShowFullHistory(true);
+                  // We should probably jump to the start of the session in full history
+                  setHasJumped(false);
+                }}
+              >
+                Context
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

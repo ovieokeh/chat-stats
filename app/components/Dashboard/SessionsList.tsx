@@ -84,7 +84,7 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
         </h3>
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {sessions.headers.map((session) => {
           const startTime = format(session.startTs, "MMM d, yyyy • h:mm a");
           const duration = formatDurationSimple((session.endTs - session.startTs) / 1000);
@@ -94,48 +94,40 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
           return (
             <div
               key={session.id}
-              className="card bg-base-100 shadow-sm border border-base-200 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group focus-within:ring-2 focus-within:ring-primary"
+              className="card bg-base-100 border border-base-200 hover:border-primary/50 hover:shadow-xl transition-all duration-300 cursor-pointer group rounded-2xl overflow-hidden"
+              onClick={() => goToSession(session.startTs, session.endTs)}
             >
-              <button
-                className="card-body p-4 flex flex-row items-center justify-between gap-4 text-left w-full"
-                onClick={() => goToSession(session.startTs, session.endTs)}
-                aria-label={`View session starting ${startTime}`}
-              >
-                {/* Left: Initiator & Time */}
-                <div className="flex items-center gap-4 min-w-0">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ${colorClass}`}
-                    aria-hidden="true"
-                  >
-                    {initiatorName?.substring(0, 2).toUpperCase()}
+              <div className="card-body p-5 flex flex-col gap-4">
+                <div className="flex items-start justify-between">
+                  {/* Initiator Info */}
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm ${colorClass}`}
+                    >
+                      {initiatorName?.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm">{initiatorName}</h4>
+                      <p className="text-[11px] opacity-50 font-medium uppercase tracking-wider">{startTime}</p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h4 className="font-semibold text-sm truncate">
-                      Started by <span className="text-primary">{initiatorName}</span>
-                    </h4>
-                    <p className="text-xs text-base-content/60">{startTime}</p>
-                  </div>
-                </div>
 
-                {/* Middle: Stats */}
-                <div className="flex items-center gap-6 hidden sm:flex shrink-0">
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs font-mono font-bold opacity-80">{duration}</span>
-                    <span className="text-[10px] uppercase opacity-50">Duration</span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs font-mono font-bold opacity-80">{session.messageCount}</span>
-                    <span className="text-[10px] uppercase opacity-50">Msgs</span>
-                  </div>
-                </div>
-
-                {/* Right: Action */}
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="btn btn-sm btn-ghost btn-circle">
+                  <div className="btn btn-circle btn-xs btn-ghost opacity-0 group-hover:opacity-100 transition-opacity">
                     <ArrowRight className="w-4 h-4" />
                   </div>
                 </div>
-              </button>
+
+                <div className="flex items-center gap-4 bg-base-200/50 rounded-xl p-3">
+                  <div className="flex-1 text-center border-r border-base-300">
+                    <p className="text-xs opacity-50 mb-1 uppercase tracking-tighter font-bold">Duration</p>
+                    <p className="text-sm font-mono font-bold">{duration}</p>
+                  </div>
+                  <div className="flex-1 text-center">
+                    <p className="text-xs opacity-50 mb-1 uppercase tracking-tighter font-bold">Messages</p>
+                    <p className="text-sm font-mono font-bold">{session.messageCount}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           );
         })}

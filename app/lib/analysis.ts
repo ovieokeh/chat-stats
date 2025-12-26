@@ -226,13 +226,11 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
       const date = getIsoDate(messages[i].ts, timezone);
 
       // For a resurrection, maybe show the next 100 messages or the next session?
-      // Let's find the session this message belongs to.
-      // We have `sessions` passed in!
       const session =
         sessions.find((s) => s.startTs <= messages[i].ts && s.endTs >= messages[i].ts) ||
-        sessions.find((s) => s.startTs === messages[i].ts); // Exact match if it started the session
+        sessions.find((s) => s.startTs === messages[i].ts);
 
-      const endTs = session ? session.endTs : messages[i].ts + 60 * 60 * 1000; // Fallback 1 hour
+      const endTs = session ? session.endTs : messages[i].ts + 60 * 60 * 1000;
 
       moments.push({
         importId,
@@ -251,6 +249,75 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
       });
     }
   }
+
+  // 3. Marathon Sessions
+  sessions.forEach((s) => {
+    const duration = (s.endTs - s.startTs) / 1000;
+    const MARATHON_SECONDS = 3 * 60 * 60; // 3 hours
+    if (duration > MARATHON_SECONDS || s.messageCount > 300) {
+      const date = getIsoDate(s.startTs, timezone);
+      moments.push({
+        importId,
+        id: `marathon-${s.startTs}`,
+        type: "marathon_session",
+        date,
+        ts: s.startTs,
+        title: "Marathon Session",
+        description: `Deep conversation lasting ${Math.floor(duration / 3600)}h ${Math.floor(
+          (duration % 3600) / 60
+        )}m with ${s.messageCount} messages.`,
+        magnitude: duration / 3600,
+        importance: Math.min(0.9, 0.6 + s.messageCount / 1000),
+        data: {
+          startTs: s.startTs,
+          endTs: s.endTs,
+        },
+      });
+    }
+  });
+
+  // 4. Sentiment Spikes (Daily)
+  const dailySentiment: Record<string, { sum: number; count: number; firstTs: number }> = {};
+  messages.forEach((m) => {
+    if (m.sentiment === undefined || m.type !== "text") return;
+    const d = getIsoDate(m.ts, timezone);
+    if (!dailySentiment[d]) dailySentiment[d] = { sum: 0, count: 0, firstTs: m.ts };
+    dailySentiment[d].sum += m.sentiment;
+    dailySentiment[d].count += 1;
+  });
+
+  Object.entries(dailySentiment).forEach(([date, stats]) => {
+    if (stats.count < 10) return;
+    const avg = stats.sum / stats.count;
+
+    if (avg > 0.4) {
+      moments.push({
+        importId,
+        id: `sent-pos-${date}`,
+        type: "sentiment_spike",
+        date,
+        ts: stats.firstTs,
+        title: "Very Positive Vibe",
+        description: `The conversation was unusually upbeat on this day.`,
+        magnitude: avg,
+        importance: 0.75,
+        data: { startTs: stats.firstTs, endTs: stats.firstTs + 86400000 },
+      });
+    } else if (avg < -0.1) {
+      moments.push({
+        importId,
+        id: `sent-neg-${date}`,
+        type: "sentiment_spike",
+        date,
+        ts: stats.firstTs,
+        title: "Heated Debate?",
+        description: `Detected more negative or intense sentiment than usual.`,
+        magnitude: Math.abs(avg),
+        importance: 0.8,
+        data: { startTs: stats.firstTs, endTs: stats.firstTs + 86400000 },
+      });
+    }
+  });
 
   return moments.sort((a, b) => b.ts - a.ts);
 };
