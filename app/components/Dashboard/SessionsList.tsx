@@ -6,10 +6,10 @@ import Dexie from "dexie";
 import { db } from "../../lib/db";
 import { format } from "date-fns";
 import { formatDurationSimple } from "../../lib/format";
-import { ArrowRight, MessageSquare, Clock, Users } from "lucide-react";
+import { ArrowRight, Clock } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getAvatarColor } from "../../lib/colors";
-import { Participant } from "../../types";
+import { Skeleton } from "../UI/Skeleton";
 
 interface SessionsListProps {
   importId: number;
@@ -59,7 +59,20 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
 
   const totalPages = sessions ? Math.ceil(sessions.count / ITEMS_per_PAGE) : 0;
 
-  if (!sessions) return <div className="p-8 text-center opacity-50">Loading sessions...</div>;
+  if (!sessions) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between mb-2">
+          <Skeleton className="h-6 w-48" />
+        </div>
+        <div className="grid gap-3">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -81,14 +94,18 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
           return (
             <div
               key={session.id}
-              className="card bg-base-100 shadow-sm border border-base-200 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group"
-              onClick={() => goToSession(session.startTs, session.endTs)}
+              className="card bg-base-100 shadow-sm border border-base-200 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group focus-within:ring-2 focus-within:ring-primary"
             >
-              <div className="card-body p-4 flex flex-row items-center justify-between gap-4">
+              <button
+                className="card-body p-4 flex flex-row items-center justify-between gap-4 text-left w-full"
+                onClick={() => goToSession(session.startTs, session.endTs)}
+                aria-label={`View session starting ${startTime}`}
+              >
                 {/* Left: Initiator & Time */}
                 <div className="flex items-center gap-4 min-w-0">
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ${colorClass}`}
+                    aria-hidden="true"
                   >
                     {initiatorName?.substring(0, 2).toUpperCase()}
                   </div>
@@ -114,11 +131,11 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
 
                 {/* Right: Action */}
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button className="btn btn-sm btn-ghost btn-circle">
+                  <div className="btn btn-sm btn-ghost btn-circle">
                     <ArrowRight className="w-4 h-4" />
-                  </button>
+                  </div>
                 </div>
-              </div>
+              </button>
             </div>
           );
         })}

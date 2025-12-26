@@ -7,6 +7,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { getAvatarColor } from "../../lib/colors";
+import { Skeleton } from "../UI/Skeleton";
 
 interface ChatViewerProps {
   importId: number;
@@ -216,11 +217,27 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({ importId, initialScrollT
               setSearch(e.target.value);
               setPage(0);
             }}
+            aria-label="Search messages"
           />
         </div>
       </div>
 
       <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-2 bg-base-200/30">
+        {!messages && (
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className={`chat ${i % 2 === 0 ? "chat-start" : "chat-end"}`}>
+                <div className="chat-header mb-1">
+                  <Skeleton className="h-3 w-24 rounded-full" />
+                </div>
+                <div className="chat-bubble bg-transparent shadow-none p-0">
+                  <Skeleton className="h-10 w-48 rounded-2xl" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {timeRange && messages && messages.length > 0 && page === 0 && (
           <div className="flex justify-center py-4">
             <div className="badge badge-soft badge-info gap-2 text-xs font-medium">Start of session view</div>
@@ -278,7 +295,9 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({ importId, initialScrollT
             </React.Fragment>
           );
         })}
-        {!messages?.length && <div className="text-center text-base-content/50 mt-10">No messages found.</div>}
+        {messages && messages.length === 0 && (
+          <div className="text-center text-base-content/50 mt-10">No messages found.</div>
+        )}
 
         {timeRange && messages && messages.length > 0 && page === totalPages - 1 && (
           <div className="flex justify-center py-4">

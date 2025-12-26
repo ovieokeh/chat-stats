@@ -34,7 +34,7 @@ export const Overview: React.FC<OverviewProps> = ({ stats, timelineData, hourlyD
 
       {/* Main Charts Area */}
       <div className="grid grid-cols-1 gap-4">
-        <ChartCard title="Weekly Activity Heatmap" takeaway="Darker squares show your most intense chat times.">
+        <ChartCard title="Weekly Activity Heatmap" takeaway="Brighter squares show your most intense chat times.">
           <Heatmap data={heatmapData} />
         </ChartCard>
       </div>

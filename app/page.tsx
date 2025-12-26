@@ -23,7 +23,24 @@ export default function Home() {
 
         <FileImporter />
 
-        {imports && imports.length > 0 && (
+        {!imports ? (
+          <div className="space-y-4">
+            <div className="h-7 w-32 bg-base-300 rounded animate-pulse mb-4 ml-2" />
+            <div className="grid gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="card bg-base-100 border border-base-300 h-24 p-4">
+                  <div className="flex items-center gap-4 h-full">
+                    <div className="h-12 w-12 rounded-xl bg-base-300 animate-pulse" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-5 w-48 bg-base-300 rounded animate-pulse" />
+                      <div className="h-4 w-32 bg-base-300 rounded animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : imports.length > 0 ? (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold ml-2 opacity-80">Recent Imports</h2>
             <div className="grid gap-4">
@@ -45,7 +62,7 @@ export default function Home() {
               ))}
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </main>
   );

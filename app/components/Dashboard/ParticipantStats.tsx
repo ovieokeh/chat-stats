@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { InsightCard } from "../UI/InsightCard";
 import { MessageSquare, Clock, Zap } from "lucide-react";
 import { formatDurationHuman } from "../../lib/format";
+import { Skeleton } from "../UI/Skeleton";
 
 interface ParticipantStatsProps {
   participants: {
@@ -20,6 +20,31 @@ interface ParticipantStatsProps {
 }
 
 export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants }) => {
+  if (!participants) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {[1, 2].map((i) => (
+          <div
+            key={i}
+            className="card bg-base-100 border border-base-300/60 shadow-lg rounded-3xl overflow-hidden h-96"
+          >
+            <div className="bg-base-200/50 p-6 border-b border-base-300/30">
+              <Skeleton className="h-8 w-1/3" />
+            </div>
+            <div className="p-6 space-y-6">
+              {[1, 2, 3, 4, 5, 6].map((j) => (
+                <div key={j} className="flex justify-between items-center">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-6 w-16" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {participants.map((p) => (
