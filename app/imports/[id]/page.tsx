@@ -98,18 +98,94 @@ export default function ImportDashboard() {
     // Hourly Data
     const hourlyMap = new Array(24).fill(0);
 
-    // Heatmap Data [Day 0-6][Hour 0-23]
-    const heatmapGrid = Array(7)
-      .fill(0)
-      .map(() => Array(24).fill(0));
+    // Heatmap Data Structure
+    // [participantId | 'all'] -> [Day 0-6][Hour 0-23] -> { count: number, replyDeltas: number[], medianReplySeconds: number }
+    type HeatmapBucket = { count: number; replyDeltas: number[]; medianReplySeconds: number };
+    const heatmaps: Record<string, HeatmapBucket[][]> = {};
 
+    const initGrid = () =>
+      Array(7)
+        .fill(0)
+        .map(() =>
+          Array(24)
+            .fill(0)
+            .map(() => ({ count: 0, replyDeltas: [], medianReplySeconds: 0 }))
+        );
+
+    heatmaps["all"] = initGrid();
+
+    // Fetch reply edges to populate responsiveness
+    const replyEdges = await db.replyEdges.where("importId").equals(importId).toArray();
+    // Create a map of messageId -> replyEdge for O(1) lookup to find if a message is a reply
+    // Actually, we need to attribute the reply time to the REPLIER's timestamp (Time of the reply message)
+    // The edge struct: { fromMessageId, deltaSeconds, fromSenderId, ... }
+    // We can iterate edges directly to populate 'replyDeltas'.
+
+    // 1. Fill Message Counts
     messages.forEach((m) => {
       const date = new Date(m.ts);
       const h = date.getHours();
       const d = date.getDay();
 
+      // Global
+      heatmaps["all"][d][h].count++;
+
+      // Per Participant
+      if (m.senderId) {
+        const key = m.senderId.toString();
+        if (!heatmaps[key]) heatmaps[key] = initGrid();
+        heatmaps[key][d][h].count++;
+      }
+
       hourlyMap[h]++;
-      heatmapGrid[d][h]++;
+    });
+
+    // 2. Fill Reply Deltas
+    replyEdges.forEach((edge) => {
+      // Find the timestamp of the REPLY message (fromMessage)
+      // We don't have it directly in edge, but we can look it up.
+      // Optimization: We already have 'messages' loaded.
+      // But looking up in array is O(N).
+      // Let's create a map of msgId -> ts first? Or just iterate messages again?
+      // Better: In step 1, we iterated ALL messages.
+      // Actually, we can just use a Map<id, msg> or Map<id, ts>.
+    });
+
+    // Optimization: Build a Message Map?
+    const msgMap = new Map<number, number>(); // id -> ts
+    messages.forEach((m) => msgMap.set(m.id!, m.ts));
+
+    replyEdges.forEach((edge) => {
+      const ts = msgMap.get(edge.fromMessageId);
+      if (!ts) return;
+
+      const date = new Date(ts);
+      const h = date.getHours();
+      const d = date.getDay();
+      const senderId = edge.fromSenderId;
+
+      // Global
+      heatmaps["all"][d][h].replyDeltas.push(edge.deltaSeconds);
+
+      // Per Participant
+      if (senderId) {
+        const key = senderId.toString();
+        if (!heatmaps[key]) heatmaps[key] = initGrid();
+        heatmaps[key][d][h].replyDeltas.push(edge.deltaSeconds);
+      }
+    });
+
+    // 3. Compute Medians
+    Object.keys(heatmaps).forEach((key) => {
+      heatmaps[key].forEach((row) => {
+        row.forEach((bucket) => {
+          if (bucket.replyDeltas.length > 0) {
+            const sorted = [...bucket.replyDeltas].sort((a, b) => a - b);
+            const mid = Math.floor(sorted.length / 2);
+            bucket.medianReplySeconds = sorted[mid];
+          }
+        });
+      });
     });
 
     const hourlyData = hourlyMap.map((count, hour) => ({ hour, count }));
@@ -121,7 +197,7 @@ export default function ImportDashboard() {
       avgDailyMessages,
       timelineData,
       hourlyData,
-      heatmapGrid,
+      heatmaps, // Rich data
     };
   }, [importId]);
 
@@ -244,7 +320,8 @@ export default function ImportDashboard() {
               stats={stats}
               timelineData={stats.timelineData}
               hourlyData={stats.hourlyData}
-              heatmapData={stats.heatmapGrid}
+              heatmapData={stats.heatmaps}
+              participants={participantsData}
             />
           </div>
         </section>
