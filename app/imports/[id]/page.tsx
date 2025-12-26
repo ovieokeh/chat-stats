@@ -18,6 +18,7 @@ import { ExportConfig } from "../../types";
 import { Settings } from "lucide-react";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { extractTopics } from "../../lib/analysis";
 
 export default function ImportDashboard() {
   const params = useParams();
@@ -190,6 +191,10 @@ export default function ImportDashboard() {
 
     const hourlyData = hourlyMap.map((count, hour) => ({ hour, count }));
 
+    // 4. Topic Extraction (Local-first) - DECOUPLED
+    // Return placeholder
+    const topics: { text: string; count: number }[] = [];
+
     return {
       totalMessages,
       totalWords,
@@ -197,8 +202,24 @@ export default function ImportDashboard() {
       avgDailyMessages,
       timelineData,
       hourlyData,
-      heatmaps, // Rich data
+      heatmaps,
+      topics,
     };
+  }, [importId]);
+
+  // Topics Data (Decoupled for better UX)
+  const topicsData = useLiveQuery(async () => {
+    if (!importId) return undefined;
+
+    // Fetch messages again (optimize later if needed, but dexie is fast)
+    // We only need rawText actually, but getting full objects is simpler for now
+    const messages = await db.messages.where("importId").equals(importId).toArray();
+
+    // Fetch global stopwords
+    const stopwordsList = await db.stopwords.toArray();
+    const customStopwords = new Set(stopwordsList.map((s) => s.word));
+
+    return await extractTopics(messages, customStopwords);
   }, [importId]);
 
   // Participants Data
@@ -322,6 +343,22 @@ export default function ImportDashboard() {
               hourlyData={stats.hourlyData}
               heatmapData={stats.heatmaps}
               participants={participantsData}
+              topics={topicsData || []}
+              topicsLoading={topicsData === undefined}
+              onTopicClick={(topic) => {
+                const newParams = new URLSearchParams(searchParams.toString());
+                newParams.set("tab", "history");
+                newParams.set("q", topic);
+                router.replace(`?${newParams.toString()}`);
+              }}
+              onBlockTopic={async (topic) => {
+                // Add to global stopwords
+                try {
+                  await db.stopwords.add({ word: topic.toLowerCase() });
+                } catch (e) {
+                  /* ignore duplicate */
+                }
+              }}
             />
           </div>
         </section>
@@ -375,6 +412,7 @@ export default function ImportDashboard() {
                   }
                 : undefined
             }
+            initialSearchTerm={searchParams.get("q") || ""}
           />
         </section>
       )}

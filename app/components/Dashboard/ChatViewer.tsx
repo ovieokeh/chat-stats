@@ -16,14 +16,41 @@ interface ChatViewerProps {
     startTs: number;
     endTs: number;
   };
+  initialSearchTerm?: string;
 }
 
 const PAGE_SIZE = 50;
 
-export const ChatViewer: React.FC<ChatViewerProps> = ({ importId, initialScrollToTimestamp, timeRange }) => {
+const HighlightedText: React.FC<{ text: string; highlight: string }> = ({ text, highlight }) => {
+  if (!highlight.trim()) return <>{text}</>;
+
+  const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+  const parts = text.split(regex);
+
+  return (
+    <>
+      {parts.map((part, i) =>
+        regex.test(part) ? (
+          <mark key={i} className="bg-warning/40 text-base-content px-0 rounded-sm">
+            {part}
+          </mark>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+};
+
+export const ChatViewer: React.FC<ChatViewerProps> = ({
+  importId,
+  initialScrollToTimestamp,
+  timeRange,
+  initialSearchTerm,
+}) => {
   const [page, setPage] = useState(0);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [search, setSearch] = useState(initialSearchTerm || "");
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearchTerm || "");
   const [hasJumped, setHasJumped] = useState(false);
   const [primaryViewerId, setPrimaryViewerId] = useState<number | null>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -271,7 +298,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({ importId, initialScrollT
               <div className={`chat ${chatClass}`}>
                 {isSystem ? (
                   <div className="text-xs text-base-content/50 bg-base-200 px-3 py-1 rounded-full text-center max-w-lg mx-auto leading-relaxed my-2">
-                    {msg.rawText}
+                    <HighlightedText text={msg.rawText || ""} highlight={debouncedSearch} />
                   </div>
                 ) : (
                   <>
@@ -287,7 +314,9 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({ importId, initialScrollT
                       <time className="text-[10px] opacity-70">{formatTime(msg.ts)}</time>
                     </div>
                     <div className={bubbleClass}>
-                      <div className="whitespace-pre-wrap break-words">{msg.rawText}</div>
+                      <div className="whitespace-pre-wrap break-words">
+                        <HighlightedText text={msg.rawText || ""} highlight={debouncedSearch} />
+                      </div>
                     </div>
                   </>
                 )}

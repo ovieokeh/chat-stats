@@ -1,6 +1,7 @@
 import { Message, Session, ReplyEdge, ExportConfig, Moment } from "../types";
 import { franc } from "franc";
 import Vader from "vader-sentiment";
+import { DEFAULT_STOPWORDS } from "./constants/default-stopwords";
 
 /**
  * Enhanced feature computation with awareness of WhatsApp artifacts.
@@ -117,10 +118,6 @@ export const inferReplyEdges = (messages: Message[], config: ExportConfig): Repl
   return edges;
 };
 
-/**
- * Helper to get YYYY-MM-DD in the user's target timezone.
- * Falls back to UTC if timezone is invalid or unspecified.
- */
 /**
  * Helper to get YYYY-MM-DD in the user's target timezone.
  * Falls back to UTC if timezone is invalid or unspecified.
@@ -256,4 +253,116 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
   }
 
   return moments.sort((a, b) => b.ts - a.ts);
+};
+
+// -----------------------------------------------------------------------------
+// TOPIC EXTRACTION (New Addition)
+// -----------------------------------------------------------------------------
+
+/**
+ * Simple English stopwords to filter out common noise.
+ * Can be extended or replaced by a more comprehensive list.
+ */
+// -----------------------------------------------------------------------------
+// TOPIC EXTRACTION (New Addition)
+// -----------------------------------------------------------------------------
+
+/**
+ * Checks if the local Python service is available.
+ */
+const SERVICE_URL = "http://localhost:8001"; // Default port for python service
+
+export const checkServiceHealth = async (): Promise<boolean> => {
+  try {
+    const res = await fetch(`${SERVICE_URL}/health`);
+    return res.ok;
+  } catch (e) {
+    return false;
+  }
+};
+
+/**
+ * Calls the local Python service to get smart clusters.
+ */
+const fetchSmartTopics = async (
+  messages: Message[],
+  customStopwords: Set<string>
+): Promise<{ text: string; count: number }[]> => {
+  const texts = messages
+    .filter((m) => m.rawText && m.type !== "system")
+    .map((m) => m.rawText!)
+    .filter((t) => t.length > 5) // Basic length filter
+    .filter((t) => !/omitted|deleted/i.test(t)); // Filter artifacts
+
+  if (texts.length === 0) return [];
+
+  try {
+    const res = await fetch(`${SERVICE_URL}/cluster`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: texts,
+        stop_words: Array.from(customStopwords),
+      }),
+    });
+
+    if (!res.ok) throw new Error("Service returned error");
+    return await res.json();
+  } catch (e) {
+    console.warn("Smart topic extraction failed, falling back", e);
+    throw e;
+  }
+};
+
+/**
+ * Extracts top topics from messages.
+ * Tries the smart service first, then falls back to local frequency counting.
+ */
+export const extractTopics = async (
+  messages: Message[],
+  customStopwords: Set<string> = new Set()
+): Promise<{ text: string; count: number }[]> => {
+  // 1. Try Smart Service
+  const isServiceUp = await checkServiceHealth();
+  if (isServiceUp) {
+    try {
+      console.log("Using Smart Topic Service...");
+      return await fetchSmartTopics(messages, customStopwords);
+    } catch (e) {
+      console.warn("Smart Service failed despite health check OK, fallback to local.");
+    }
+  } else {
+    console.log("Smart Topic Service unavailable, using local fallback.");
+  }
+
+  // 2. Fallback: Local Regex/Frequency
+  const wordCounts: Record<string, number> = {};
+  const mergedStopwords = new Set([...DEFAULT_STOPWORDS, ...customStopwords]);
+
+  // Regex to match words: strictly letters, minimum 3 chars
+  const wordRegex = /\b[a-zA-Z]{3,}\b/g;
+
+  messages.forEach((msg) => {
+    if (!msg.rawText || msg.type === "system") return;
+
+    // Normalize: lowercase
+    const text = msg.rawText.toLowerCase();
+
+    const matches = text.match(wordRegex);
+    if (matches) {
+      matches.forEach((word) => {
+        if (!mergedStopwords.has(word)) {
+          wordCounts[word] = (wordCounts[word] || 0) + 1;
+        }
+      });
+    }
+  });
+
+  // Convert to array and sort
+  const sortedTopics = Object.entries(wordCounts)
+    .map(([text, count]) => ({ text, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 50); // Top 50
+
+  return sortedTopics;
 };

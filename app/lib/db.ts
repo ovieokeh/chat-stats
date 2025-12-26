@@ -10,6 +10,7 @@ export type ChatDatabase = Dexie & {
   sessions: EntityTable<Session, "id">;
   replyEdges: EntityTable<ReplyEdge, "id">;
   derivedMetrics: EntityTable<DerivedMetric, "id">;
+  stopwords: EntityTable<{ id: number; word: string }, "id">;
 };
 
 export const db = new Dexie(DB_NAME) as ChatDatabase;
@@ -21,6 +22,7 @@ db.version(1).stores({
   sessions: "++id, importId, startTs, [importId+startTs]",
   replyEdges: "++id, importId, deltaSeconds, [importId+fromSenderId+toSenderId]",
   derivedMetrics: "++id, importId, metricKey",
+  stopwords: "++id, &word",
 });
 
 // Helper to reset/clear db for a specific import or totally

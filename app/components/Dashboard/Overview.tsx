@@ -7,6 +7,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, AreaChart, A
 import { formatNumber } from "../../lib/format";
 
 import { Heatmap } from "./Heatmap";
+import { TopicCloud } from "./TopicCloud";
 
 // Redefine locally or import shared type if possible.
 // For now, inline matches the structure returned by page.tsx
@@ -27,6 +28,10 @@ interface OverviewProps {
   hourlyData: Array<{ hour: number; count: number }>;
   heatmapData: Record<string, HeatmapBucket[][]>; // Changed from number[][]
   participants?: Array<{ id: number; name: string }>; // Needed for dropdown
+  topics: { text: string; count: number }[];
+  topicsLoading?: boolean;
+  onTopicClick: (topic: string) => void;
+  onBlockTopic: (topic: string) => void;
 }
 
 import { formatDurationHuman } from "../../lib/format";
@@ -39,6 +44,10 @@ export const Overview: React.FC<OverviewProps> = ({
   hourlyData,
   heatmapData,
   participants = [],
+  topics = [],
+  topicsLoading,
+  onTopicClick,
+  onBlockTopic,
 }) => {
   const [metric, setMetric] = useState<"volume" | "speed">("volume");
   const [participantId, setParticipantId] = useState<string>("all");
@@ -82,53 +91,68 @@ export const Overview: React.FC<OverviewProps> = ({
         <KpiTile label="Msgs / Active Day" value={Math.round(stats.avgDailyMessages)} />
       </div>
 
-      {/* Main Charts Area */}
       <div className="grid grid-cols-1 gap-4">
-        <ChartCard
-          title={metric === "volume" ? "Weekly Activity Heatmap" : "Responsiveness Heatmap"}
-          takeaway={
-            metric === "volume"
-              ? "Brighter squares show your most intense chat times."
-              : "Darker squares show faster reply times."
-          }
-          action={
-            <div className="flex items-center gap-2">
-              {/* Metric Toggle */}
-              <div className="join">
-                <button
-                  className={`btn btn-xs join-item ${metric === "volume" ? "btn-primary" : "btn-ghost"}`}
-                  onClick={() => setMetric("volume")}
-                  title="Message Volume"
-                >
-                  <MessageSquare className="w-3 h-3" />
-                </button>
-                <button
-                  className={`btn btn-xs join-item ${metric === "speed" ? "btn-primary" : "btn-ghost"}`}
-                  onClick={() => setMetric("speed")}
-                  title="Responsiveness"
-                >
-                  <Clock className="w-3 h-3" />
-                </button>
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2">
+            <ChartCard
+              title={metric === "volume" ? "Weekly Activity Heatmap" : "Responsiveness Heatmap"}
+              takeaway={
+                metric === "volume"
+                  ? "Brighter squares show your most intense chat times."
+                  : "Darker squares show faster reply times."
+              }
+              action={
+                <div className="flex items-center gap-2">
+                  {/* Metric Toggle */}
+                  <div className="join">
+                    <button
+                      className={`btn btn-xs join-item ${metric === "volume" ? "btn-primary" : "btn-ghost"}`}
+                      onClick={() => setMetric("volume")}
+                      title="Message Volume"
+                    >
+                      <MessageSquare className="w-3 h-3" />
+                    </button>
+                    <button
+                      className={`btn btn-xs join-item ${metric === "speed" ? "btn-primary" : "btn-ghost"}`}
+                      onClick={() => setMetric("speed")}
+                      title="Responsiveness"
+                    >
+                      <Clock className="w-3 h-3" />
+                    </button>
+                  </div>
 
-              {/* Participant Filter */}
-              <select
-                className="select select-bordered select-xs max-w-[120px]"
-                value={participantId}
-                onChange={(e) => setParticipantId(e.target.value)}
-              >
-                <option value="all">Everyone</option>
-                {participants.map((p) => (
-                  <option key={p.id} value={p.id.toString()}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          }
-        >
-          <Heatmap data={transformedData} metricType={metric} />
-        </ChartCard>
+                  {/* Participant Filter */}
+                  <select
+                    className="select select-bordered select-xs max-w-[120px]"
+                    value={participantId}
+                    onChange={(e) => setParticipantId(e.target.value)}
+                  >
+                    <option value="all">Everyone</option>
+                    {participants.map((p) => (
+                      <option key={p.id} value={p.id.toString()}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              }
+            >
+              <Heatmap data={transformedData} metricType={metric} />
+            </ChartCard>
+          </div>
+          <div className="lg:col-span-1">
+            <ChartCard title="Topic Cloud" takeaway="What you talk about most. Click to filter history.">
+              <div className="h-[300px] -m-2">
+                <TopicCloud
+                  topics={topics}
+                  onTopicClick={onTopicClick}
+                  onBlockTopic={onBlockTopic}
+                  isLoading={topicsLoading}
+                />
+              </div>
+            </ChartCard>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
