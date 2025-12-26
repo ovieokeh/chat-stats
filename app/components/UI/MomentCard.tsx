@@ -68,6 +68,11 @@ export const MomentCard: React.FC<MomentCardProps> = ({ moment, className }) => 
               <p className="text-[10px] uppercase tracking-wider text-base-content/50 mb-1">
                 {moment.type.replace("_", " ")}
               </p>
+              {moment.data?.startTs && moment.data?.endTs && (
+                <p className="text-[11px] text-base-content/60 font-mono mb-1">
+                  {format(moment.data.startTs, "HH:mm")} - {format(moment.data.endTs, "HH:mm")}
+                </p>
+              )}
               <p className="text-xs text-base-content/80 leading-snug line-clamp-3">{moment.description}</p>
             </div>
           </div>

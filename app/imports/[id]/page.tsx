@@ -212,7 +212,7 @@ export default function ImportDashboard() {
 
       {activeTab === "moments" && (
         <section className="animate-in fade-in duration-300">
-          <div className="mb-6 max-w-2xl">
+          <div className="mb-6">
             <h2 className="text-2xl font-bold mb-2">Interesting Moments</h2>
             <p className="text-base-content/60">Key events and anomalies detected in your conversation.</p>
           </div>

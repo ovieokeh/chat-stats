@@ -57,9 +57,9 @@ export default function MomentDetailsPage() {
     <main className="max-w-6xl mx-auto px-4 md:px-6 py-8 space-y-8 pb-32 h-screen flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-4 shrink-0">
-        <Link href={`/imports/${importId}`} className="btn btn-circle btn-ghost">
+        <button onClick={() => router.back()} className="btn btn-circle btn-ghost" title="Go Back">
           <ArrowLeft className="w-6 h-6" />
-        </Link>
+        </button>
         <div>
           <div className="flex items-center gap-2 text-sm text-base-content/60">
             <span>{importRecord.filename}</span>
@@ -89,6 +89,12 @@ export default function MomentDetailsPage() {
               <p>
                 This event occurred on <strong>{format(moment.ts, "EEEE, MMMM d")}</strong>.
               </p>
+              {moment.data?.startTs && moment.data?.endTs && (
+                <p>
+                  Time: <strong>{format(moment.data.startTs, "HH:mm")}</strong> -{" "}
+                  <strong>{format(moment.data.endTs, "HH:mm")}</strong>
+                </p>
+              )}
               <p>
                 Type: <span className="badge badge-outline">{moment.type}</span>
               </p>

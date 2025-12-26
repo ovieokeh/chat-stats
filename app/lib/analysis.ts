@@ -116,16 +116,64 @@ export const inferReplyEdges = (messages: Message[], config: ExportConfig): Repl
   return edges;
 };
 
+/**
+ * Helper to get YYYY-MM-DD in the user's target timezone.
+ * Falls back to UTC if timezone is invalid or unspecified.
+ */
+/**
+ * Helper to get YYYY-MM-DD in the user's target timezone.
+ * Falls back to UTC if timezone is invalid or unspecified.
+ * CACHED for performance.
+ */
+const dateFormatterCache = new Map<string, Intl.DateTimeFormat>();
+
+const getIsoDate = (ts: number, timezone: string): string => {
+  const cacheKey = timezone || "UTC";
+  let formatter = dateFormatterCache.get(cacheKey);
+
+  if (!formatter) {
+    try {
+      formatter = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: cacheKey,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+    } catch (e) {
+      console.warn(`Invalid timezone '${timezone}', falling back to UTC`);
+      formatter = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: "UTC",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+    }
+    dateFormatterCache.set(cacheKey, formatter);
+  }
+
+  return formatter.format(new Date(ts));
+};
+
 export const findInterestingMoments = (messages: Message[], sessions: Session[], config: ExportConfig): Moment[] => {
   const moments: Moment[] = [];
   const importId = messages[0]?.importId;
   if (!importId) return [];
 
+  const timezone = config.parsing.timezone || "UTC";
+
   // 1. Volume Spikes using MAD (Median Absolute Deviation)
   const dailyCounts: Record<string, number> = {};
+
+  // Track the first timestamp seen for each date to perform accurate timestamping later
+  const dateToFirstTs: Record<string, number> = {};
+
   messages.forEach((m) => {
-    const d = new Date(m.ts).toISOString().split("T")[0];
+    const d = getIsoDate(m.ts, timezone);
     dailyCounts[d] = (dailyCounts[d] || 0) + 1;
+
+    if (!dateToFirstTs[d] || m.ts < dateToFirstTs[d]) {
+      dateToFirstTs[d] = m.ts;
+    }
   });
 
   const counts = Object.values(dailyCounts).sort((a, b) => a - b);
@@ -137,17 +185,37 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
     // Modified Z-Score: 0.6745 * (x - median) / MAD
     const modifiedZ = (0.6745 * (count - median)) / mad;
     if (modifiedZ > 3.5 && count > 50) {
-      // Standard threshold for modified Z-score outliers
+      // Use the first message timestamp of that day as the anchor,
+      // or construct a "noon" timestamp for that day in the target timezone?
+      // Using the actual first message timestamp is safest for "jumping to" that moment.
+      const anchorTs = dateToFirstTs[date] || new Date(date).getTime();
+
+      // Find End TS for this day to bound the view
+      // Optimization: we could track lastTs same as firstTs
+      // For now, let's filter (slower but accurate) or just use the whole day range logic
+      // Actually tracking lastTs is O(N) in the same loop, better.
+      // But for now, let's just assume we want to show the full day.
+      // We can iterate again or just construct end of day.
+      // Constructing end of day in target timezone is safer.
+      // But accurate last message TS is best.
+      const msgsForDay = messages.filter((m) => getIsoDate(m.ts, timezone) === date);
+      const startTs = msgsForDay[0]?.ts;
+      const endTs = msgsForDay[msgsForDay.length - 1]?.ts;
+
       moments.push({
         importId,
         id: `spike-${date}`,
         type: "volume_spike",
         date,
-        ts: new Date(date).getTime(),
+        ts: anchorTs,
         title: "Activity Burst",
         description: `Unusual volume of ${count} messages.`,
         magnitude: modifiedZ,
         importance: Math.min(0.95, 0.7 + modifiedZ / 10),
+        data: {
+          startTs: startTs || anchorTs,
+          endTs: endTs || anchorTs + 86400000,
+        },
       });
     }
   });
@@ -157,16 +225,31 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
   for (let i = 1; i < messages.length; i++) {
     const diff = messages[i].ts - messages[i - 1].ts;
     if (diff > GAP_THRESHOLD_MS) {
+      const date = getIsoDate(messages[i].ts, timezone);
+
+      // For a resurrection, maybe show the next 100 messages or the next session?
+      // Let's find the session this message belongs to.
+      // We have `sessions` passed in!
+      const session =
+        sessions.find((s) => s.startTs <= messages[i].ts && s.endTs >= messages[i].ts) ||
+        sessions.find((s) => s.startTs === messages[i].ts); // Exact match if it started the session
+
+      const endTs = session ? session.endTs : messages[i].ts + 60 * 60 * 1000; // Fallback 1 hour
+
       moments.push({
         importId,
         id: `res-${messages[i].ts}`,
         type: "long_gap",
-        date: new Date(messages[i].ts).toISOString().split("T")[0],
+        date,
         ts: messages[i].ts,
         title: "The Return",
         description: `Picking up the thread after ${Math.floor(diff / 86400000)} days.`,
         magnitude: diff / 86400000,
         importance: 0.8,
+        data: {
+          startTs: messages[i].ts,
+          endTs: endTs,
+        },
       });
     }
   }

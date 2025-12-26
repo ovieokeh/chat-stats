@@ -55,6 +55,26 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onSave, onRese
             </div>
             <div className="form-control">
               <label className="label">
+                <span className="label-text">Timezone</span>
+              </label>
+              <select
+                className="select select-bordered w-full"
+                value={localConfig.parsing.timezone}
+                onChange={(e) => handleChange("parsing", "timezone", e.target.value)}
+              >
+                {/* Common timezones or all supported */}
+                {["UTC", ...Intl.supportedValuesOf("timeZone").filter((tz) => tz.includes("/"))].map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="form-control">
+              <label className="label">
                 <span className="label-text">Strict Mode</span>
               </label>
               <label className="label cursor-pointer justify-start gap-4">

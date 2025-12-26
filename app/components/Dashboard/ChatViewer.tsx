@@ -25,8 +25,14 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({ importId, initialScrollT
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [hasJumped, setHasJumped] = useState(false);
   const [primaryViewerId, setPrimaryViewerId] = useState<number | null>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
-  // Jump to timestamp logic
+  // Scroll to top on page change
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+  }, [page]);
   useEffect(() => {
     if (initialScrollToTimestamp && !hasJumped) {
       // Find which page this timestamp belongs to.
@@ -54,55 +60,106 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({ importId, initialScrollT
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Fetch participants for name resolution
-  const participants = useLiveQuery(() => db.participants.where("importId").equals(importId).toArray(), [importId]);
+  // Fetch participants and config
+  const importData = useLiveQuery(async () => {
+    const [participants, importRecord] = await Promise.all([
+      db.participants.where("importId").equals(importId).toArray(),
+      db.imports.get(importId),
+    ]);
+    return { participants, importRecord };
+  }, [importId]);
+
+  const participants = importData?.participants;
+  const importRecord = importData?.importRecord;
+
+  const timezone = importRecord?.configJson
+    ? (JSON.parse(importRecord.configJson) as any).parsing?.timezone || "UTC"
+    : "UTC";
+
   const participantMap = React.useMemo(() => {
     const map = new Map<number, string>();
     participants?.forEach((p) => map.set(p.id!, p.displayName));
     return map;
   }, [participants]);
 
-  // Auto-select primary viewer (simple heuristic: first non-system user or user with most messages if we had that info handy)
-  // For now, just pick the first one if not set.
+  // auto select primary viewer
   useEffect(() => {
-    if (participants && participants.length > 0 && primaryViewerId === null) {
-      const candidate = participants.find((p) => !p.isSystem); // Try to find a real person
-      if (candidate) {
-        setPrimaryViewerId(candidate.id!);
-      } else {
-        setPrimaryViewerId(participants[0].id!);
-      }
+    if (participants?.length) {
+      setPrimaryViewerId(participants[0].id!);
     }
-  }, [participants, primaryViewerId]);
+  }, [participants]);
+
+  // DateTime formatters
+  // DateTime formatters - Memoized for performance
+  const timeFormatter = React.useMemo(() => {
+    try {
+      return new Intl.DateTimeFormat("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: timezone,
+      });
+    } catch (e) {
+      return null;
+    }
+  }, [timezone]);
+
+  const dateFormatter = React.useMemo(() => {
+    try {
+      return new Intl.DateTimeFormat("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        timeZone: timezone,
+      });
+    } catch (e) {
+      return null;
+    }
+  }, [timezone]);
+
+  const formatTime = React.useCallback(
+    (ts: number) => {
+      if (timeFormatter) {
+        return timeFormatter.format(new Date(ts));
+      }
+      return format(ts, "HH:mm");
+    },
+    [timeFormatter]
+  );
+
+  const formatDateHeader = React.useCallback(
+    (ts: number) => {
+      if (dateFormatter) {
+        return dateFormatter.format(new Date(ts));
+      }
+      return format(ts, "EEE, MMM d, yyyy");
+    },
+    [dateFormatter]
+  );
+
+  // ... (primary viewer logic) ...
 
   const messages = useLiveQuery(async () => {
-    let collection = db.messages.where("importId").equals(importId);
+    // Sorting: Dexie indices are ASC by default.
+    // [importId+ts] ensures meaningful sort by time.
+    let collection = db.messages.where("[importId+ts]");
 
-    // Apply Time Range Restriction FIRST if present (optimization)
-    // Actually we need to use the compound index [importId+ts] for range efficiently
     let rangeCollection;
     if (timeRange) {
-      rangeCollection = db.messages
-        .where("[importId+ts]")
-        .between([importId, timeRange.startTs], [importId, timeRange.endTs], true, true);
+      rangeCollection = collection.between([importId, timeRange.startTs], [importId, timeRange.endTs], true, true);
     } else {
-      rangeCollection = db.messages.where("[importId+ts]").between([importId, Dexie.minKey], [importId, Dexie.maxKey]);
+      rangeCollection = collection.between([importId, Dexie.minKey], [importId, Dexie.maxKey]);
     }
 
     if (debouncedSearch) {
-      // Filter is applied in memory after range fetch or using filter() on collection
-      // Dexie filter() is client side scan if not indexed.
-      // We'll perform filter on the range collection.
       rangeCollection = rangeCollection.filter((m) => m.rawText.toLowerCase().includes(debouncedSearch.toLowerCase()));
     }
 
     const offset = page * PAGE_SIZE;
-
-    // Use rangeCollection to fetch
     return rangeCollection.offset(offset).limit(PAGE_SIZE).toArray();
   }, [importId, page, debouncedSearch, timeRange]);
 
-  // Count for pagination
   // Count for pagination
   const totalCount = useLiveQuery(async () => {
     let rangeCollection;
@@ -123,13 +180,15 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({ importId, initialScrollT
 
   const totalPages = Math.ceil((totalCount || 0) / PAGE_SIZE);
 
+  // Group messages for headers
+  let lastDateHeader = "";
+
   return (
     <div className="card bg-base-100 border border-base-300/60 shadow-xl rounded-2xl flex flex-col h-full min-h-[500px]">
+      {/* ... (Header) ... */}
       <div className="p-4 border-b border-base-300/60 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <h3 className="text-lg font-semibold hidden md:block">Message History</h3>
-
-          {/* Primary Viewer Selector */}
           <div className="flex items-center gap-2">
             <span className="text-xs opacity-60">View as:</span>
             <select
@@ -155,62 +214,68 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({ importId, initialScrollT
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              setPage(0); // reset to first page
+              setPage(0);
             }}
           />
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-base-200/30">
+      <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-2 bg-base-200/30">
+        {timeRange && messages && messages.length > 0 && page === 0 && (
+          <div className="flex justify-center py-4">
+            <div className="badge badge-soft badge-info gap-2 text-xs font-medium">Start of session view</div>
+          </div>
+        )}
+
         {messages?.map((msg) => {
           const senderName = msg.senderId ? participantMap.get(msg.senderId) : "System";
           const isPrimary = msg.senderId === primaryViewerId;
           const isSystem = msg.type === "system";
 
-          // Color for name (only for others)
           const nameColorClass = senderName && !isSystem ? getAvatarColor(senderName) : "";
-
-          // Chat alignment
           const chatClass = isSystem ? "chat-center" : isPrimary ? "chat-end" : "chat-start";
 
-          // Bubble styling
-          // Primary: Greenish (success/primary), Others: White/Base-100
-          // System: Gray
           let bubbleClass = "chat-bubble text-sm ";
-          let bubbleStyle = {};
-
           if (isPrimary) {
-            bubbleClass += "chat-bubble-success text-success-content"; // WhatsApp green-ish style usually
+            bubbleClass += "chat-bubble-success text-success-content";
           } else if (!isSystem) {
-            bubbleClass += "bg-base-100 text-base-content shadow-sm"; // White/Light gray for others
+            bubbleClass += "bg-base-100 text-base-content shadow-sm";
           }
 
+          // Date Header Logic
+          const currentDateHeader = formatDateHeader(msg.ts);
+          const showHeader = currentDateHeader !== lastDateHeader;
+          lastDateHeader = currentDateHeader;
+
           return (
-            <div key={msg.id} className={`chat ${chatClass}`}>
-              {isSystem ? (
-                <div className="text-xs text-base-content/50 bg-base-200 px-3 py-1 rounded-full text-center max-w-lg mx-auto leading-relaxed my-2">
-                  {msg.rawText}
-                </div>
-              ) : (
-                <>
-                  <div className="chat-header text-xs opacity-50 mb-1 flex items-center gap-2">
-                    {!isPrimary && (
-                      <span
-                        className={`font-bold ${nameColorClass.replace("bg-", "text-").replace("text-white", "")}`}
-                        style={{ filter: "brightness(0.9) saturate(1.5)" }}
-                      >
-                        {senderName}
-                      </span>
-                    )}
-                    <time className="text-[10px] opacity-70">{format(msg.ts, "HH:mm")}</time>
+            <React.Fragment key={msg.id}>
+              {showHeader && <div className="divider text-xs opacity-50 my-4">{currentDateHeader}</div>}
+
+              <div className={`chat ${chatClass}`}>
+                {isSystem ? (
+                  <div className="text-xs text-base-content/50 bg-base-200 px-3 py-1 rounded-full text-center max-w-lg mx-auto leading-relaxed my-2">
+                    {msg.rawText}
                   </div>
-                  <div className={bubbleClass} style={bubbleStyle}>
-                    <div className="whitespace-pre-wrap break-words">{msg.rawText}</div>
-                  </div>
-                  {/* <div className="chat-footer opacity-50 text-xs flex gap-1 mt-1"></div> */}
-                </>
-              )}
-            </div>
+                ) : (
+                  <>
+                    <div className="chat-header text-xs opacity-50 mb-1 flex items-center gap-2">
+                      {!isPrimary && (
+                        <span
+                          className={`font-bold ${nameColorClass.replace("bg-", "text-").replace("text-white", "")}`}
+                          style={{ filter: "brightness(0.9) saturate(1.5)" }}
+                        >
+                          {senderName}
+                        </span>
+                      )}
+                      <time className="text-[10px] opacity-70">{formatTime(msg.ts)}</time>
+                    </div>
+                    <div className={bubbleClass}>
+                      <div className="whitespace-pre-wrap break-words">{msg.rawText}</div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </React.Fragment>
           );
         })}
         {!messages?.length && <div className="text-center text-base-content/50 mt-10">No messages found.</div>}

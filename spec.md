@@ -250,19 +250,23 @@ All metrics should be filterable by:
 
 - messages/day, words/day, chars/day
 - rolling averages (7d/30d)
+- messages/day, words/day, chars/day (Calendar vs Active Day distinction)
+- rolling averages (7d/30d)
 - active days %, longest inactive streak, average gap
 - initiation count (new session starter rate)
 - “burstiness” (variance/mean of inter-message intervals)
+- “yap index” (words per message ratio)
 
 ### 8.2 Response behavior
 
 Using `reply_edges`:
 
-- median/p90 reply time per participant
+- median/p90 reply time per participant (averages are misleading)
 - fast reply rate (<2m, <10m, <60m)
 - reciprocity index: abs(median_reply_A - median_reply_B)
 - reply-time by hour-of-day (heatmap)
 - late-night reply behavior (configurable “night hours”)
+- “time spent waiting” (cumulative reply delta per person)
 
 ### 8.3 Turn-taking & conversation shape
 
