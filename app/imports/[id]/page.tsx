@@ -3,20 +3,25 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { db, clearDatabase } from "../../lib/db";
+import Dexie from "dexie";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Overview } from "../../components/Dashboard/Overview";
 import { ParticipantStats } from "../../components/Dashboard/ParticipantStats";
 import { ChatViewer } from "../../components/Dashboard/ChatViewer";
 import { SessionsList } from "../../components/Dashboard/SessionsList";
 import { MomentsFeed } from "../../components/Dashboard/MomentsFeed";
+import { Leaderboard } from "../../components/Dashboard/Leaderboard";
 import { format } from "date-fns";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, Eye, EyeOff, Users } from "lucide-react";
 import { ConfigPanel } from "../../components/ConfigPanel";
 import { ExportConfig } from "../../types";
 import { Navbar } from "../../components/Dashboard/Navbar";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { extractTopics } from "../../lib/analysis";
+import { Participant } from "../../types";
+
+const COMMON_BOTS = ["Meta AI", "WhatsApp"];
 
 export default function ImportDashboard() {
   const params = useParams();
@@ -28,7 +33,10 @@ export default function ImportDashboard() {
 
   // Tab state synced with URL
   const tabParam = searchParams.get("tab");
-  const activeTab = tabParam === "moments" || tabParam === "history" || tabParam === "sessions" ? tabParam : "overview";
+  const activeTab =
+    tabParam === "moments" || tabParam === "history" || tabParam === "sessions" || tabParam === "leaderboard"
+      ? tabParam
+      : "overview";
 
   const setActiveTab = (tab: string) => {
     const newParams = new URLSearchParams(searchParams.toString());
@@ -78,16 +86,24 @@ export default function ImportDashboard() {
 
   // Fetch data
   const importRecord = useLiveQuery(() => db.imports.get(importId), [importId]);
+  const allParticipants = useLiveQuery(() => db.participants.where("importId").equals(importId).toArray(), [importId]);
 
   // Aggregated Stats
   const stats = useLiveQuery(async () => {
     if (!importId) return null;
 
     // Parallel queries
-    const totalMessages = await db.messages.where("importId").equals(importId).count();
-    const messages = await db.messages.where("importId").equals(importId).toArray(); // needed for word count sum
-    // Note: huge array in memory. Optimize with dedicated aggregate table in real app.
-    // For 40k msgs, ~10MB JSON. Chrome can handle it.
+    const allMessages = await db.messages.where("importId").equals(importId).toArray();
+    const participants = await db.participants.where("importId").equals(importId).toArray();
+
+    const hiddenParticipantIds = new Set(
+      participants
+        .filter((p) => p.isHidden || COMMON_BOTS.some((bot) => p.displayName.toLowerCase().includes(bot.toLowerCase())))
+        .map((p) => p.id)
+    );
+
+    const messages = allMessages.filter((m) => !m.senderId || !hiddenParticipantIds.has(m.senderId));
+    const totalMessages = messages.length;
 
     const totalWords = messages.reduce((acc, m) => acc + (m.wordCount || 0), 0);
 
@@ -193,7 +209,11 @@ export default function ImportDashboard() {
           if (bucket.replyDeltas.length > 0) {
             const sorted = [...bucket.replyDeltas].sort((a, b) => a - b);
             const mid = Math.floor(sorted.length / 2);
-            bucket.medianReplySeconds = sorted[mid];
+            if (sorted.length % 2 === 0) {
+              bucket.medianReplySeconds = (sorted[mid - 1] + sorted[mid]) / 2;
+            } else {
+              bucket.medianReplySeconds = sorted[mid];
+            }
           }
         });
       });
@@ -223,7 +243,16 @@ export default function ImportDashboard() {
 
     // Fetch messages again (optimize later if needed, but dexie is fast)
     // We only need rawText actually, but getting full objects is simpler for now
-    const messages = await db.messages.where("importId").equals(importId).toArray();
+    const allMessages = await db.messages.where("importId").equals(importId).toArray();
+    const participants = await db.participants.where("importId").equals(importId).toArray();
+
+    const hiddenParticipantIds = new Set(
+      participants
+        .filter((p) => p.isHidden || COMMON_BOTS.some((bot) => p.displayName.toLowerCase().includes(bot.toLowerCase())))
+        .map((p) => p.id)
+    );
+
+    const messages = allMessages.filter((m) => !m.senderId || !hiddenParticipantIds.has(m.senderId));
 
     // Fetch global stopwords
     const stopwordsList = await db.stopwords.toArray();
@@ -235,13 +264,43 @@ export default function ImportDashboard() {
   // Participants Data
   const participantsData = useLiveQuery(async () => {
     if (!importId) return [];
-    const participants = await db.participants.where("importId").equals(importId).toArray();
-    const msgs = await db.messages.where("importId").equals(importId).toArray();
-    const replyEdges = await db.replyEdges.where("importId").equals(importId).toArray();
-    const sessions = await db.sessions.where("importId").equals(importId).toArray(); // Needed for initiation
+
+    const [participants, msgs, replyEdges, sessions] = await Promise.all([
+      db.participants.where("importId").equals(importId).toArray(),
+      db.messages.where("[importId+ts]").between([importId, Dexie.minKey], [importId, Dexie.maxKey]).toArray(),
+      db.replyEdges.where("importId").equals(importId).toArray(),
+      db.sessions.where("importId").equals(importId).toArray(),
+    ]);
+
+    // Pre-calculate double text counts by sender
+    const doubleTextCounts: Record<number, number> = {};
+    let lastSenderId: number | null = null;
+    msgs.forEach((m) => {
+      if (m.senderId === lastSenderId && m.senderId !== null) {
+        doubleTextCounts[m.senderId] = (doubleTextCounts[m.senderId] || 0) + 1;
+      }
+      lastSenderId = m.senderId;
+    });
+
+    const visibleParticipantIds = new Set(participants.filter((p) => !p.isHidden && !p.isSystem).map((p) => p.id));
+    const totalVisibleInitiations = sessions.filter(
+      (s) => s.initiatorId && visibleParticipantIds.has(s.initiatorId)
+    ).length;
 
     return participants
-      .filter((p) => !p.isSystem)
+      .filter((p) => {
+        if (p.isSystem) return false;
+
+        // Auto-hide bots if not already marked
+        const isBot = COMMON_BOTS.some((bot) => p.displayName.toLowerCase().includes(bot.toLowerCase()));
+        if (isBot && p.isHidden === undefined) {
+          // We can't easily side-effect the DB update inside useLiveQuery efficiently without causing loops
+          // but we can just filter it out here for now.
+          return false;
+        }
+
+        return !p.isHidden;
+      })
       .map((p) => {
         const pMsgs = msgs.filter((m) => m.senderId === p.id);
         const pEdges = replyEdges.filter((e) => e.fromSenderId === p.id);
@@ -251,8 +310,8 @@ export default function ImportDashboard() {
         const wordCount = pMsgs.reduce((acc, m) => acc + (m.wordCount || 0), 0);
         const yapIndex = msgCount > 0 ? wordCount / msgCount : 0;
 
-        // Initiation Rate
-        const initiationRate = sessions.length > 0 ? (pSessions.length / sessions.length) * 100 : 0;
+        // Initiation Rate (Relative to visible set)
+        const initiationRate = totalVisibleInitiations > 0 ? (pSessions.length / totalVisibleInitiations) * 100 : 0;
 
         // Reply Stats
         const deltas = pEdges.map((e) => e.deltaSeconds).sort((a, b) => a - b);
@@ -260,10 +319,29 @@ export default function ImportDashboard() {
 
         // Median Reply
         const mid = Math.floor(deltas.length / 2);
-        const medianReplyTime = deltas.length > 0 ? deltas[mid] : 0;
+        const medianReplyTime =
+          deltas.length === 0 ? 0 : deltas.length % 2 === 0 ? (deltas[mid - 1] + deltas[mid]) / 2 : deltas[mid];
 
-        // Time Waiting (How long THIS person made OTHERS wait -> Sum of their reply deltas)
+        // Time Waiting
         const secondsKeptWaiting = pEdges.reduce((acc, e) => acc + e.deltaSeconds, 0);
+
+        // Night Owl (00:00 - 05:00)
+        const nightOwlCount = pMsgs.filter((m) => {
+          const h = new Date(m.ts).getHours();
+          return h >= 0 && h < 5;
+        }).length;
+
+        // Early Bird (05:00 - 09:00)
+        const earlyBirdCount = pMsgs.filter((m) => {
+          const h = new Date(m.ts).getHours();
+          return h >= 5 && h < 9;
+        }).length;
+
+        // Ghost Count (replies > 12h)
+        const ghostCount = pEdges.filter((e) => e.deltaSeconds > 12 * 3600).length;
+
+        // Double Text
+        const doubleTextCount = doubleTextCounts[p.id!] || 0;
 
         return {
           id: p.id!,
@@ -275,6 +353,10 @@ export default function ImportDashboard() {
           avgReplyTime,
           medianReplyTime,
           secondsKeptWaiting,
+          nightOwlCount,
+          earlyBirdCount,
+          ghostCount,
+          doubleTextCount,
         };
       });
   }, [importId]);
@@ -323,6 +405,13 @@ export default function ImportDashboard() {
             </a>
             <a
               role="tab"
+              className={`tab ${activeTab === "leaderboard" ? "tab-active bg-base-100 shadow-sm" : ""}`}
+              onClick={() => setActiveTab("leaderboard")}
+            >
+              Leaderboard
+            </a>
+            <a
+              role="tab"
               className={`tab ${activeTab === "history" ? "tab-active bg-base-100 shadow-sm" : ""}`}
               onClick={() => setActiveTab("history")}
             >
@@ -333,10 +422,7 @@ export default function ImportDashboard() {
           <div className="flex-1 min-h-0">
             {activeTab === "overview" && (
               <section className="animate-in fade-in duration-300">
-                <h2 className="text-xl font-semibold mb-4">Participants</h2>
-                <ParticipantStats participants={participantsData || []} />
-
-                <div className="mt-8">
+                <div className="">
                   <h2 className="sr-only">Overview</h2>
                   <Overview
                     stats={stats}
@@ -362,6 +448,19 @@ export default function ImportDashboard() {
                     }}
                   />
                 </div>
+
+                <div className="mt-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold">Participants</h2>
+                    <button
+                      onClick={() => setIsSettingsOpen(true)}
+                      className="text-xs btn btn-ghost btn-xs gap-1 opacity-50 hover:opacity-100"
+                    >
+                      <Users className="w-3 h-3" /> Manage
+                    </button>
+                  </div>
+                  <ParticipantStats participants={participantsData || []} />
+                </div>
               </section>
             )}
 
@@ -379,6 +478,16 @@ export default function ImportDashboard() {
                 </div>
                 {/* Grid is handled inside MomentsFeed now to include filters. */}
                 <MomentsFeed importId={importId} />
+              </section>
+            )}
+
+            {activeTab === "leaderboard" && (
+              <section className="animate-in fade-in duration-300">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold mb-2">The Leaderboard</h2>
+                  <p className="text-base-content/60">Rankings across various metrics and behavioral patterns.</p>
+                </div>
+                <Leaderboard participants={participantsData || []} />
               </section>
             )}
 
@@ -467,6 +576,29 @@ export default function ImportDashboard() {
               <button className="btn btn-error btn-outline btn-sm" onClick={handleDeleteAllData}>
                 Delete Everything
               </button>
+            </div>
+
+            <div className="divider my-6">Participant Visibility</div>
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+              {allParticipants
+                ?.filter((p) => !p.isSystem)
+                .map((p) => (
+                  <div key={p.id} className="flex items-center justify-between p-3 bg-base-200/50 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${p.isHidden ? "bg-base-content/20" : "bg-success"}`} />
+                      <span className={`text-sm font-semibold ${p.isHidden ? "opacity-40" : ""}`}>{p.displayName}</span>
+                    </div>
+                    <button
+                      className={`btn btn-xs btn-ghost gap-2 ${p.isHidden ? "text-primary" : "opacity-40"}`}
+                      onClick={async () => {
+                        await db.participants.update(p.id!, { isHidden: !p.isHidden });
+                      }}
+                    >
+                      {p.isHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                      {p.isHidden ? "Show" : "Hide"}
+                    </button>
+                  </div>
+                ))}
             </div>
           </div>
         </div>

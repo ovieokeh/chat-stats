@@ -20,6 +20,7 @@ export interface Participant {
   displayName: string;
   colorHint?: string;
   isSystem: boolean;
+  isHidden?: boolean;
 }
 
 export type MessageType =

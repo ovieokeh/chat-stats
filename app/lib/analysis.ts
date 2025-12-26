@@ -65,6 +65,9 @@ const createEnhancedSession = (msgs: Message[]): Session => {
     return acc;
   }, {} as Record<string, number>);
 
+  // Improved initiator detection: skip system messages or messages without a sender
+  const initiator = msgs.find((m) => m.senderId && m.type !== "system");
+
   return {
     importId: msgs[0].importId,
     startTs: msgs[0].ts,
@@ -72,7 +75,7 @@ const createEnhancedSession = (msgs: Message[]): Session => {
     gapThresholdMinutes: 0,
     messageCount: msgs.length,
     participantsJson: JSON.stringify(Array.from(participants)),
-    initiatorId: msgs[0].senderId,
+    initiatorId: initiator ? initiator.senderId : undefined,
     dominantType: "text", // logic to determine dominant type
   };
 };
@@ -152,6 +155,19 @@ const getIsoDate = (ts: number, timezone: string): string => {
   return formatter.format(new Date(ts));
 };
 
+/**
+ * Generic median calculation that handles even lengths correctly.
+ */
+const calculateMedian = (values: number[]): number => {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+  return sorted[mid];
+};
+
 export const findInterestingMoments = (messages: Message[], sessions: Session[], config: ExportConfig): Moment[] => {
   const moments: Moment[] = [];
   const importId = messages[0]?.importId;
@@ -174,10 +190,10 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
     }
   });
 
-  const counts = Object.values(dailyCounts).sort((a, b) => a - b);
-  const median = counts[Math.floor(counts.length / 2)];
-  const absDeviations = counts.map((c) => Math.abs(c - median)).sort((a, b) => a - b);
-  const mad = absDeviations[Math.floor(absDeviations.length / 2)] || 1;
+  const counts = Object.values(dailyCounts);
+  const median = calculateMedian(counts);
+  const absDeviations = counts.map((c) => Math.abs(c - median));
+  const mad = calculateMedian(absDeviations) || 1;
 
   Object.entries(dailyCounts).forEach(([date, count]) => {
     // Modified Z-Score: 0.6745 * (x - median) / MAD
@@ -254,7 +270,12 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
   sessions.forEach((s) => {
     const duration = (s.endTs - s.startTs) / 1000;
     const MARATHON_SECONDS = 3 * 60 * 60; // 3 hours
-    if (duration > MARATHON_SECONDS || s.messageCount > 300) {
+
+    // Only count as a marathon if it lasts a long time AND has significant engagement
+    // OR if it's an extreme burst of messages regardless of duration.
+    const isMarathon = (duration > MARATHON_SECONDS && s.messageCount > 50) || s.messageCount > 300;
+
+    if (isMarathon) {
       const date = getIsoDate(s.startTs, timezone);
       moments.push({
         importId,

@@ -90,7 +90,7 @@ export const FileImporter: React.FC = () => {
 
         // Fetch back messages with IDs for session/reply logic?
         // Or just re-query. Re-query is safer.
-        const storedMessages = await db.messages.where("importId").equals(importId).toArray();
+        const storedMessages = await db.messages.where("importId").equals(importId).sortBy("ts");
 
         // Sessionize
         const sessions = sessionize(storedMessages, DEFAULT_CONFIG);

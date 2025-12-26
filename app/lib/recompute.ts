@@ -16,7 +16,7 @@ export const recomputeImportAnalysis = async (importId: number) => {
   // 1. Fetch necessary data
   const [importRecord, messages] = await Promise.all([
     db.imports.get(importId),
-    db.messages.where("importId").equals(importId).toArray(),
+    db.messages.where("importId").equals(importId).sortBy("ts"),
   ]);
 
   if (!importRecord || !messages || messages.length === 0) {

@@ -17,9 +17,9 @@ export const formatDurationHuman = (seconds: number): string => {
     return `${duration.hours}h ${duration.minutes}m`;
   }
   if (duration.minutes && duration.minutes > 0) {
-    return `${duration.minutes}m ${duration.seconds}s`;
+    return `${duration.minutes}m ${duration.seconds ?? 0}s`;
   }
-  return `${duration.seconds || 0}s`;
+  return `${duration.seconds ?? 0}s`;
 };
 
 export const formatDateRange = (startTs: number, endTs: number): string => {

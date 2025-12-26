@@ -8,6 +8,8 @@ import { formatNumber } from "../../lib/format";
 
 import { Heatmap } from "./Heatmap";
 import { TopicCloud } from "./TopicCloud";
+import { ShareModal } from "./ShareModal";
+import { Share2 } from "lucide-react";
 
 // Redefine locally or import shared type if possible.
 // For now, inline matches the structure returned by page.tsx
@@ -51,6 +53,7 @@ export const Overview: React.FC<OverviewProps> = ({
 }) => {
   const [metric, setMetric] = useState<"volume" | "speed">("volume");
   const [participantId, setParticipantId] = useState<string>("all");
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const transformedData = useMemo(() => {
     const grid = heatmapData[participantId] || heatmapData["all"];
@@ -83,6 +86,17 @@ export const Overview: React.FC<OverviewProps> = ({
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-black tracking-tight">Overview</h2>
+          <p className="text-sm opacity-50">Insights at a glance</p>
+        </div>
+        <button className="btn btn-primary btn-sm rounded-xl gap-2" onClick={() => setIsShareModalOpen(true)}>
+          <Share2 className="w-4 h-4" />
+          Share Summary
+        </button>
+      </div>
+
       {/* KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <KpiTile label="Total Messages" value={formatNumber(stats.totalMessages)} />
@@ -90,6 +104,17 @@ export const Overview: React.FC<OverviewProps> = ({
         <KpiTile label="Active Days" value={stats.activeDays} />
         <KpiTile label="Msgs / Active Day" value={Math.round(stats.avgDailyMessages)} />
       </div>
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        type="overview"
+        data={{
+          stats,
+          topics: topics.slice(0, 10),
+          chatName: "Chat Overview",
+        }}
+      />
 
       <div className="grid grid-cols-1 gap-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
