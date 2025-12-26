@@ -26,7 +26,7 @@ export const Overview: React.FC<OverviewProps> = ({ stats, timelineData, hourlyD
         <KpiTile label="Total Messages" value={formatNumber(stats.totalMessages)} />
         <KpiTile label="Total Words" value={formatNumber(stats.totalWords)} />
         <KpiTile label="Active Days" value={stats.activeDays} />
-        <KpiTile label="Avg Msgs/Day" value={Math.round(stats.avgDailyMessages)} />
+        <KpiTile label="Msgs / Active Day" value={Math.round(stats.avgDailyMessages)} />
       </div>
 
       {/* Main Charts Area */}

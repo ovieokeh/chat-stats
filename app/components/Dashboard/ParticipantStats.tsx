@@ -11,7 +11,11 @@ interface ParticipantStatsProps {
     name: string;
     msgCount: number;
     wordCount: number;
+    yapIndex: number; // words per message
+    initiationRate: number; // percentage
+    medianReplyTime: number; // seconds
     avgReplyTime: number; // seconds
+    daysKeptWaiting: number; // days
   }[];
 }
 
@@ -44,14 +48,50 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
               <span className="text-2xl font-semibold tabular-nums">{p.wordCount.toLocaleString()}</span>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between" title="Words per message">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-warning/10 rounded-lg text-warning">
+                  <span className="text-sm font-bold">Yap</span>
+                </div>
+                <span className="text-sm font-medium opacity-70">Yap Index</span>
+              </div>
+              <span className="text-xl font-semibold tabular-nums">{p.yapIndex.toFixed(2)}</span>
+            </div>
+
+            <div className="flex items-center justify-between" title="% of sessions started by this person">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-info/10 rounded-lg text-info">
+                  <span className="text-sm font-bold">Init</span>
+                </div>
+                <span className="text-sm font-medium opacity-70">Initiation Rate</span>
+              </div>
+              <span className="text-xl font-semibold tabular-nums">{p.initiationRate.toFixed(1)}%</span>
+            </div>
+
+            <div
+              className="flex items-center justify-between"
+              title={`Average: ${formatDurationHuman(p.avgReplyTime)}`}
+            >
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-accent/10 rounded-lg text-accent">
                   <Clock size={20} />
                 </div>
-                <span className="text-sm font-medium opacity-70">Avg Reply</span>
+                <span className="text-sm font-medium opacity-70">Median Reply</span>
               </div>
-              <span className="text-xl font-semibold tabular-nums">{formatDurationHuman(p.avgReplyTime)}</span>
+              <span className="text-xl font-semibold tabular-nums">{formatDurationHuman(p.medianReplyTime)}</span>
+            </div>
+
+            <div
+              className="flex items-center justify-between"
+              title="Total time spent waiting for this person to reply"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-error/10 rounded-lg text-error">
+                  <span className="text-sm font-bold">Wait</span>
+                </div>
+                <span className="text-sm font-medium opacity-70">Time Waiting</span>
+              </div>
+              <span className="text-xl font-semibold tabular-nums">{p.daysKeptWaiting.toFixed(1)}d</span>
             </div>
           </div>
         </div>

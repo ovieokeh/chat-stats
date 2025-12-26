@@ -83,10 +83,8 @@ export default function ImportDashboard() {
     const days = new Set(messages.map((m) => format(m.ts, "yyyy-MM-dd")));
     const activeDays = days.size;
 
-    // Avg daily
-    const durationMs = messages[messages.length - 1]?.ts - messages[0]?.ts;
-    const durationDays = durationMs / (1000 * 60 * 60 * 24) || 1;
-    const avgDailyMessages = totalMessages / durationDays;
+    // Avg daily (Active Days)
+    const avgDailyMessages = activeDays > 0 ? totalMessages / activeDays : 0;
 
     // Timeline Data (by month)
     const timelineMap = new Map<string, number>();
@@ -120,26 +118,43 @@ export default function ImportDashboard() {
     const participants = await db.participants.where("importId").equals(importId).toArray();
     const msgs = await db.messages.where("importId").equals(importId).toArray();
     const replyEdges = await db.replyEdges.where("importId").equals(importId).toArray();
+    const sessions = await db.sessions.where("importId").equals(importId).toArray(); // Needed for initiation
 
     return participants
       .filter((p) => !p.isSystem)
       .map((p) => {
         const pMsgs = msgs.filter((m) => m.senderId === p.id);
         const pEdges = replyEdges.filter((e) => e.fromSenderId === p.id);
+        const pSessions = sessions.filter((s) => s.initiatorId === p.id);
 
         const msgCount = pMsgs.length;
         const wordCount = pMsgs.reduce((acc, m) => acc + (m.wordCount || 0), 0);
+        const yapIndex = msgCount > 0 ? wordCount / msgCount : 0;
 
-        // Avg reply time
-        const totalReplyTime = pEdges.reduce((acc, e) => acc + e.deltaSeconds, 0);
-        const avgReplyTime = pEdges.length ? totalReplyTime / pEdges.length : 0;
+        // Initiation Rate
+        const initiationRate = sessions.length > 0 ? (pSessions.length / sessions.length) * 100 : 0;
+
+        // Reply Stats
+        const deltas = pEdges.map((e) => e.deltaSeconds).sort((a, b) => a - b);
+        const avgReplyTime = pEdges.length ? deltas.reduce((a, b) => a + b, 0) / pEdges.length : 0;
+
+        // Median Reply
+        const mid = Math.floor(deltas.length / 2);
+        const medianReplyTime = deltas.length > 0 ? deltas[mid] : 0;
+
+        // Time Waiting (How long THIS person made OTHERS wait -> Sum of their reply deltas)
+        const daysKeptWaiting = pEdges.reduce((acc, e) => acc + e.deltaSeconds, 0) / (60 * 60 * 24);
 
         return {
           id: p.id!,
           name: p.displayName,
           msgCount,
           wordCount,
+          yapIndex,
+          initiationRate,
           avgReplyTime,
+          medianReplyTime,
+          daysKeptWaiting,
         };
       });
   }, [importId]);
@@ -153,7 +168,7 @@ export default function ImportDashboard() {
   }
 
   return (
-    <main className="max-w-6xl mx-auto px-4 md:px-6 py-8 space-y-8 pb-32 overflow-y-scroll">
+    <main className="max-w-6xl w-full mx-auto px-4 md:px-6 py-8 space-y-8 pb-32 overflow-y-scroll">
       <div className="flex items-center gap-4">
         <Link href="/" className="btn btn-circle btn-ghost">
           <ArrowLeft className="w-6 h-6" />

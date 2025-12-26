@@ -71,6 +71,7 @@ const createEnhancedSession = (msgs: Message[]): Session => {
     gapThresholdMinutes: 0,
     messageCount: msgs.length,
     participantsJson: JSON.stringify(Array.from(participants)),
+    initiatorId: msgs[0].senderId,
     dominantType: "text", // logic to determine dominant type
   };
 };

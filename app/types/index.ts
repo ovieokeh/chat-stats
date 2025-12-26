@@ -59,6 +59,7 @@ export interface Session {
   gapThresholdMinutes: number;
   messageCount: number;
   participantsJson: string; // JSON array of participant IDs
+  initiatorId?: number;
   dominantType: MessageType;
 }
 
