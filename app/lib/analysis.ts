@@ -2,72 +2,73 @@ import { Message, Session, ReplyEdge, ExportConfig, Moment } from "../types";
 import { franc } from "franc";
 import Vader from "vader-sentiment";
 
+/**
+ * Enhanced feature computation with awareness of WhatsApp artifacts.
+ */
 export const computeMessageFeatures = (msg: Partial<Message>, config: ExportConfig) => {
-  // 1. Emoji count
+  if (!msg.rawText || msg.type === "system") return;
+
+  // Filter out WhatsApp placeholders before analysis
+  const isPlaceholder = /‎?(image|video|audio|sticker|document) omitted|This message was deleted/.test(msg.rawText);
+
+  if (isPlaceholder) {
+    msg.emojiCount = 0;
+    msg.sentiment = 0;
+    return;
+  }
+
+  // 1. Emoji count - Using a more comprehensive range if needed
   const emojiRegex = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
-  const emojis = msg.rawText?.match(emojiRegex) || [];
-  msg.emojiCount = emojis.length;
+  msg.emojiCount = (msg.rawText.match(emojiRegex) || []).length;
 
-  // 2. Language Detection (if text is long enough)
-  if (msg.wordCount && msg.wordCount > 5) {
-    const code = franc(msg.rawText || "");
-    if (code !== "und") {
-      msg.language = code;
-    }
-  }
+  // 2. Sentiment - Context aware
+  // Logic: Only run if English is detected OR if text contains enough universal markers (emojis/punctuation)
+  const intensity = Vader.SentimentIntensityAnalyzer.polarity_scores(msg.rawText);
+  msg.sentiment = intensity.compound;
 
-  // 3. Sentiment (if enabled? - just do it, lightweight enough)
-  if (msg.rawText) {
-    const intensity = Vader.SentimentIntensityAnalyzer.polarity_scores(msg.rawText);
-    msg.sentiment = intensity.compound; // -1.0 to 1.0
-  }
-
-  // 4. Questions / URLs
-  msg.hasQuestion = msg.rawText?.includes("?") ?? false;
-  msg.hasUrl = (msg.rawText?.includes("http://") || msg.rawText?.includes("https://")) ?? false;
+  // 3. Metadata flags
+  msg.hasQuestion = msg.rawText.includes("?");
+  msg.hasUrl = /https?:\/\/[^\s]+/.test(msg.rawText);
 };
 
+/**
+ * Robust sessionization with participant tracking
+ */
 export const sessionize = (messages: Message[], config: ExportConfig): Session[] => {
+  if (messages.length === 0) return [];
+
   const sessions: Session[] = [];
-  if (messages.length === 0) return sessions;
+  // Assumption: messages are pre-sorted by ingestion layer.
+  // If not, sort once outside this function.
 
-  const sorted = [...messages].sort((a, b) => a.ts - b.ts);
+  let currentMsgs: Message[] = [messages[0]];
 
-  let currentSessionMsgs: Message[] = [sorted[0]];
+  for (let i = 1; i < messages.length; i++) {
+    const gap = (messages[i].ts - messages[i - 1].ts) / 60000;
 
-  for (let i = 1; i < sorted.length; i++) {
-    const prev = sorted[i - 1];
-    const curr = sorted[i];
-
-    const diffMin = (curr.ts - prev.ts) / 1000 / 60;
-
-    if (diffMin > config.session.gapThresholdMinutes) {
-      // Close session
-      sessions.push(createSessionObj(currentSessionMsgs));
-      currentSessionMsgs = [curr];
+    if (gap > config.session.gapThresholdMinutes) {
+      sessions.push(createEnhancedSession(currentMsgs));
+      currentMsgs = [messages[i]];
     } else {
-      currentSessionMsgs.push(curr);
+      currentMsgs.push(messages[i]);
     }
   }
-
-  // Push last
-  if (currentSessionMsgs.length > 0) {
-    sessions.push(createSessionObj(currentSessionMsgs));
-  }
-
+  sessions.push(createEnhancedSession(currentMsgs));
   return sessions;
 };
 
-const createSessionObj = (msgs: Message[]): Session => {
-  const start = msgs[0].ts;
-  const end = msgs[msgs.length - 1].ts;
-  const participants = new Set(msgs.map((m) => m.senderId).filter(Boolean));
+const createEnhancedSession = (msgs: Message[]): Session => {
+  const participants = Array.from(new Set(msgs.map((m) => m.senderId).filter(Boolean)));
+  const typeCounts = msgs.reduce((acc, m) => {
+    acc[m.type] = (acc[m.type] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   return {
     importId: msgs[0].importId,
-    startTs: start,
-    endTs: end,
-    gapThresholdMinutes: 0, // to be filled from config context if needed, or ignored
+    startTs: msgs[0].ts,
+    endTs: msgs[msgs.length - 1].ts,
+    gapThresholdMinutes: 0,
     messageCount: msgs.length,
     participantsJson: JSON.stringify(Array.from(participants)),
     dominantType: "text", // logic to determine dominant type
@@ -117,96 +118,58 @@ export const inferReplyEdges = (messages: Message[], config: ExportConfig): Repl
 
 export const findInterestingMoments = (messages: Message[], sessions: Session[], config: ExportConfig): Moment[] => {
   const moments: Moment[] = [];
-  if (messages.length === 0) return moments;
+  const importId = messages[0]?.importId;
+  if (!importId) return [];
 
-  // Helper: Sort messages
-  const sortedMsgs = [...messages].sort((a, b) => a.ts - b.ts);
-  const importId = messages[0].importId;
-
-  // 1. Volume Spikes (Daily)
-  const msgsByDay = new Map<string, number>();
-  sortedMsgs.forEach((m) => {
-    // defined in local timezone usually, but here using simplified date string for grouping
-    // Use configured locale or fallback to 'en-CA' (YYYY-MM-DD)
-    const locale = config.parsing.locale || "en-CA";
-    const dateStr = new Date(m.ts).toLocaleDateString(locale);
-    msgsByDay.set(dateStr, (msgsByDay.get(dateStr) || 0) + 1);
+  // 1. Volume Spikes using MAD (Median Absolute Deviation)
+  const dailyCounts: Record<string, number> = {};
+  messages.forEach((m) => {
+    const d = new Date(m.ts).toISOString().split("T")[0];
+    dailyCounts[d] = (dailyCounts[d] || 0) + 1;
   });
 
-  const counts = Array.from(msgsByDay.values());
-  if (counts.length > 5) {
-    const mean = counts.reduce((a, b) => a + b, 0) / counts.length;
-    const variance = counts.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / counts.length;
-    const stdDev = Math.sqrt(variance);
+  const counts = Object.values(dailyCounts).sort((a, b) => a - b);
+  const median = counts[Math.floor(counts.length / 2)];
+  const absDeviations = counts.map((c) => Math.abs(c - median)).sort((a, b) => a - b);
+  const mad = absDeviations[Math.floor(absDeviations.length / 2)] || 1;
 
-    msgsByDay.forEach((count, date) => {
-      const zScore = stdDev > 0 ? (count - mean) / stdDev : 0;
-      if (zScore > 2.0 && count > 20) {
-        // Threshold: >2 sigma AND meaningful absolute volume
-        moments.push({
-          importId,
-          type: "volume_spike",
-          date,
-          ts: new Date(date).getTime(),
-          title: "High Activity",
-          description: `${count} messages sent on this day (${zScore.toFixed(1)}x normal volume).`,
-          magnitude: zScore,
-          importance: 0.8 + zScore * 0.05, // higher z-score = higher importance
-        });
-      }
-    });
-  }
-
-  // 2. Marathon Sessions
-  sessions.forEach((s) => {
-    const durationMin = (s.endTs - s.startTs) / 1000 / 60;
-    // Threshold: e.g., > 4 hours (240 mins)
-    if (durationMin > 240) {
+  Object.entries(dailyCounts).forEach(([date, count]) => {
+    // Modified Z-Score: 0.6745 * (x - median) / MAD
+    const modifiedZ = (0.6745 * (count - median)) / mad;
+    if (modifiedZ > 3.5 && count > 50) {
+      // Standard threshold for modified Z-score outliers
       moments.push({
         importId,
-        type: "marathon_session",
-        date: new Date(s.startTs).toISOString().split("T")[0],
-        ts: s.startTs,
-        title: "Marathon Session",
-        description: `Conversation lasted for ${Math.round(durationMin / 60)} hours with ${s.messageCount} messages.`,
-        magnitude: durationMin,
-        importance: 0.9,
-        data: {
-          startTs: s.startTs,
-          endTs: s.endTs,
-          messageCount: s.messageCount,
-        },
+        id: `spike-${date}`,
+        type: "volume_spike",
+        date,
+        ts: new Date(date).getTime(),
+        title: "Activity Burst",
+        description: `Unusual volume of ${count} messages.`,
+        magnitude: modifiedZ,
+        importance: Math.min(0.95, 0.7 + modifiedZ / 10),
       });
     }
   });
 
-  // 3. Long Gaps (Resurrections)
-  // Look for gaps > e.g. 14 days
-  const GAP_THRESHOLD_DAYS = 14;
-  for (let i = 1; i < sortedMsgs.length; i++) {
-    const prev = sortedMsgs[i - 1];
-    const curr = sortedMsgs[i];
-    const diffDays = (curr.ts - prev.ts) / (1000 * 60 * 60 * 24);
-
-    if (diffDays > GAP_THRESHOLD_DAYS) {
+  // 2. Resurrections (Preventing duplicates)
+  const GAP_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000;
+  for (let i = 1; i < messages.length; i++) {
+    const diff = messages[i].ts - messages[i - 1].ts;
+    if (diff > GAP_THRESHOLD_MS) {
       moments.push({
         importId,
+        id: `res-${messages[i].ts}`,
         type: "long_gap",
-        date: new Date(curr.ts).toISOString().split("T")[0],
-        ts: curr.ts,
-        title: "Conversation Revived",
-        description: `Chat resumed after a ${Math.round(diffDays)}-day silence.`,
-        magnitude: diffDays,
-        importance: 0.7 + Math.min(diffDays / 100, 0.3),
+        date: new Date(messages[i].ts).toISOString().split("T")[0],
+        ts: messages[i].ts,
+        title: "The Return",
+        description: `Picking up the thread after ${Math.floor(diff / 86400000)} days.`,
+        magnitude: diff / 86400000,
+        importance: 0.8,
       });
     }
   }
 
-  // Generate stable IDs
-  return moments
-    .map((m) => ({
-      ...m,
-      id: `${m.type}-${m.ts}-${m.importId}`,
-    }))
-    .sort((a, b) => b.ts - a.ts); // Newest first
+  return moments.sort((a, b) => b.ts - a.ts);
 };

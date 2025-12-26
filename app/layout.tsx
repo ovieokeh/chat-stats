@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import Sidebar from "@/app/components/Layout/Sidebar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,9 +21,8 @@ export default function RootLayout({
         className={`${inter.className} antialiased bg-base-200 h-screen overflow-hidden text-base-content flex justify-center`}
       >
         <Providers>
-          <div className="flex w-full max-w-[1280px] h-screen bg-base-100 shadow overflow-hidden">
-            <Sidebar />
-            <main className="flex-1 flex flex-col p-8 overflow-hidden">{children}</main>
+          <div className="w-full h-screen bg-base-100 shadow overflow-hidden flex flex-col">
+            <main className="flex-1 flex flex-col p-4 md:p-8 overflow-hidden relative">{children}</main>
           </div>
         </Providers>
       </body>
