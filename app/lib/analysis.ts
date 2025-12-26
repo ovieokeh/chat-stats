@@ -68,6 +68,21 @@ const createEnhancedSession = (msgs: Message[]): Session => {
   // Improved initiator detection: skip system messages or messages without a sender
   const initiator = msgs.find((m) => m.senderId && m.type !== "system");
 
+  // Determine dominant type: if 80%+ of messages are a certain non-text type, use that.
+  let dominantType: Message["type"] = "text";
+  const nonSystemMsgs = msgs.filter((m) => m.type !== "system");
+  if (nonSystemMsgs.length > 0) {
+    const counts = nonSystemMsgs.reduce((acc, m) => {
+      acc[m.type] = (acc[m.type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const topArr = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    if (topArr[0][1] / nonSystemMsgs.length > 0.8) {
+      dominantType = topArr[0][0] as Message["type"];
+    }
+  }
+
   return {
     importId: msgs[0].importId,
     startTs: msgs[0].ts,
@@ -76,7 +91,7 @@ const createEnhancedSession = (msgs: Message[]): Session => {
     messageCount: msgs.length,
     participantsJson: JSON.stringify(Array.from(participants)),
     initiatorId: initiator ? initiator.senderId : undefined,
-    dominantType: "text", // logic to determine dominant type
+    dominantType,
   };
 };
 
@@ -87,8 +102,9 @@ export const inferReplyEdges = (messages: Message[], config: ExportConfig): Repl
   const edges: ReplyEdge[] = [];
   const windowMs = config.session.replyWindowMinutes * 60 * 1000;
 
-  // Ensure messages are sorted by TS to guarantee correct look-back
-  const sortedMsgs = [...messages].sort((a, b) => a.ts - b.ts);
+  // No need to sort if we trust the ingestion layer or DB order.
+  // But let's keep it for robustness if this is used in isolation.
+  const sortedMsgs = messages;
 
   for (let i = 1; i < sortedMsgs.length; i++) {
     const curr = sortedMsgs[i];
@@ -127,8 +143,9 @@ export const inferReplyEdges = (messages: Message[], config: ExportConfig): Repl
  * CACHED for performance.
  */
 const dateFormatterCache = new Map<string, Intl.DateTimeFormat>();
+const metadataFormatterCache = new Map<string, Intl.DateTimeFormat>();
 
-const getIsoDate = (ts: number, timezone: string): string => {
+export const getIsoDate = (ts: number, timezone: string): string => {
   const cacheKey = timezone || "UTC";
   let formatter = dateFormatterCache.get(cacheKey);
 
@@ -153,6 +170,59 @@ const getIsoDate = (ts: number, timezone: string): string => {
   }
 
   return formatter.format(new Date(ts));
+};
+
+/**
+ * Gets hour, day, and date in the specific timezone.
+ * Optimized with caching to avoid re-instantiating Intl.DateTimeFormat.
+ */
+export const getTzMetadata = (ts: number, timezone: string) => {
+  const cacheKey = timezone || "UTC";
+  let formatter = metadataFormatterCache.get(cacheKey);
+
+  if (!formatter) {
+    try {
+      formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: cacheKey,
+        hour12: false,
+        hour: "numeric",
+        weekday: "short",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+    } catch (e) {
+      formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "UTC",
+        hour12: false,
+        hour: "numeric",
+        weekday: "short",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+    }
+    metadataFormatterCache.set(cacheKey, formatter);
+  }
+
+  const p = formatter.formatToParts(new Date(ts));
+  const res = { hour: 0, day: 0, date: "" };
+  const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
+  let year = "",
+    month = "",
+    dayOfMonth = "";
+
+  p.forEach((part) => {
+    if (part.type === "hour") res.hour = parseInt(part.value) % 24;
+    if (part.type === "weekday") res.day = dayMap[part.value] ?? 0;
+    if (part.type === "year") year = part.value;
+    if (part.type === "month") month = part.value;
+    if (part.type === "day") dayOfMonth = part.value;
+  });
+
+  res.date = `${year}-${month}-${dayOfMonth}`;
+  return res;
 };
 
 /**
@@ -182,7 +252,7 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
   const dateToFirstTs: Record<string, number> = {};
 
   messages.forEach((m) => {
-    const d = getIsoDate(m.ts, timezone);
+    const { date: d } = getTzMetadata(m.ts, timezone);
     dailyCounts[d] = (dailyCounts[d] || 0) + 1;
 
     if (!dateToFirstTs[d] || m.ts < dateToFirstTs[d]) {
@@ -212,7 +282,7 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
       // We can iterate again or just construct end of day.
       // Constructing end of day in target timezone is safer.
       // But accurate last message TS is best.
-      const msgsForDay = messages.filter((m) => getIsoDate(m.ts, timezone) === date);
+      const msgsForDay = messages.filter((m) => getTzMetadata(m.ts, timezone).date === date);
       const startTs = msgsForDay[0]?.ts;
       const endTs = msgsForDay[msgsForDay.length - 1]?.ts;
 
@@ -343,14 +413,6 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
   return moments.sort((a, b) => b.ts - a.ts);
 };
 
-// -----------------------------------------------------------------------------
-// TOPIC EXTRACTION (New Addition)
-// -----------------------------------------------------------------------------
-
-/**
- * Simple English stopwords to filter out common noise.
- * Can be extended or replaced by a more comprehensive list.
- */
 // -----------------------------------------------------------------------------
 // TOPIC EXTRACTION (New Addition)
 // -----------------------------------------------------------------------------

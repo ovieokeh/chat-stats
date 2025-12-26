@@ -49,6 +49,23 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
     return { count, headers };
   }, [importId, page]);
 
+  // Group sessions by day
+  const groupedSessions = React.useMemo(() => {
+    if (!sessions?.headers) return [];
+
+    const groups: { date: string; sessions: any[] }[] = [];
+    sessions.headers.forEach((header) => {
+      const dateStr = format(header.startTs, "yyyy-MM-dd");
+      let group = groups.find((g) => g.date === dateStr);
+      if (!group) {
+        group = { date: dateStr, sessions: [] };
+        groups.push(group);
+      }
+      group.sessions.push(header);
+    });
+    return groups;
+  }, [sessions?.headers]);
+
   const goToSession = (startTs: number, endTs: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", "history");
@@ -65,9 +82,9 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
         <div className="flex items-center justify-between mb-2">
           <Skeleton className="h-6 w-48" />
         </div>
-        <div className="grid gap-3">
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+        <div className="grid gap-2">
+          {[...Array(8)].map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full rounded-lg" />
           ))}
         </div>
       </div>
@@ -75,76 +92,92 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-2">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold flex items-center gap-2">
-          <Clock className="w-5 h-5" />
+          <Clock className="w-5 h-5 text-primary" />
           Sessions Explorer
-          <span className="badge badge-neutral text-xs">{sessions.count} total</span>
+          <span className="badge badge-sm badge-neutral text-[10px] font-mono opacity-70 uppercase tracking-widest">
+            {sessions.count} total
+          </span>
         </h3>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {sessions.headers.map((session) => {
-          const startTime = format(session.startTs, "MMM d, yyyy • h:mm a");
-          const duration = formatDurationSimple((session.endTs - session.startTs) / 1000);
-          const initiatorName = session.initiatorId ? participantMap.get(session.initiatorId) : "Unknown";
-          const colorClass = initiatorName ? getAvatarColor(initiatorName) : "bg-base-300";
-
-          return (
-            <div
-              key={session.id}
-              className="card bg-base-100 border border-base-200 hover:border-primary/50 hover:shadow-xl transition-all duration-300 cursor-pointer group rounded-2xl overflow-hidden"
-              onClick={() => goToSession(session.startTs, session.endTs)}
-            >
-              <div className="card-body p-5 flex flex-col gap-4">
-                <div className="flex items-start justify-between">
-                  {/* Initiator Info */}
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm ${colorClass}`}
-                    >
-                      {initiatorName?.substring(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-sm">{initiatorName}</h4>
-                      <p className="text-[11px] opacity-50 font-medium uppercase tracking-wider">{startTime}</p>
-                    </div>
-                  </div>
-
-                  <div className="btn btn-circle btn-xs btn-ghost opacity-0 group-hover:opacity-100 transition-opacity">
-                    <ArrowRight className="w-4 h-4" />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 bg-base-200/50 rounded-xl p-3">
-                  <div className="flex-1 text-center border-r border-base-300">
-                    <p className="text-xs opacity-50 mb-1 uppercase tracking-tighter font-bold">Duration</p>
-                    <p className="text-sm font-mono font-bold">{duration}</p>
-                  </div>
-                  <div className="flex-1 text-center">
-                    <p className="text-xs opacity-50 mb-1 uppercase tracking-tighter font-bold">Messages</p>
-                    <p className="text-sm font-mono font-bold">{session.messageCount}</p>
-                  </div>
-                </div>
-              </div>
+      <div className="space-y-8">
+        {groupedSessions.map((group) => (
+          <div key={group.date} className="relative">
+            <div className="sticky top-0 z-10 bg-base-100/80 backdrop-blur-md py-2 mb-3 border-b border-base-200">
+              <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-base-content/40">
+                {format(new Date(group.date), "EEEE, MMMM d, yyyy")}
+              </h4>
             </div>
-          );
-        })}
+
+            <div className="grid grid-cols-1 gap-2">
+              {group.sessions.map((session) => {
+                const startTime = format(session.startTs, "h:mm a");
+                const duration = formatDurationSimple((session.endTs - session.startTs) / 1000);
+                const initiatorName = session.initiatorId ? participantMap.get(session.initiatorId) : "Unknown";
+                const colorClass = initiatorName ? getAvatarColor(initiatorName) : "bg-base-300";
+
+                return (
+                  <div
+                    key={session.id}
+                    className="group flex items-center gap-4 p-2 pl-3 bg-base-100 border border-base-200 hover:border-primary/40 hover:bg-base-200/50 transition-all cursor-pointer rounded-xl"
+                    onClick={() => goToSession(session.startTs, session.endTs)}
+                  >
+                    {/* Compact Initiator */}
+                    <div className="flex items-center gap-3 w-40 shrink-0">
+                      <div
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black text-white shadow-sm ${colorClass}`}
+                      >
+                        {initiatorName?.substring(0, 1).toUpperCase()}
+                      </div>
+                      <div className="truncate">
+                        <p className="font-bold text-xs truncate leading-tight">{initiatorName}</p>
+                        <p className="text-[10px] opacity-40 font-mono leading-tight">{startTime}</p>
+                      </div>
+                    </div>
+
+                    {/* Stats Horizontal */}
+                    <div className="flex-1 flex items-center gap-6 justify-end mr-4">
+                      <div className="text-right">
+                        <p className="text-[9px] opacity-30 uppercase font-black tracking-tighter mb-0.5">Duration</p>
+                        <p className="text-xs font-mono font-bold leading-none">{duration}</p>
+                      </div>
+                      <div className="text-right min-w-[60px]">
+                        <p className="text-[9px] opacity-30 uppercase font-black tracking-tighter mb-0.5">Msgs</p>
+                        <p className="text-xs font-mono font-bold leading-none">{session.messageCount}</p>
+                      </div>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                        <ArrowRight className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
 
       {totalPages > 1 && (
-        <div className="join flex justify-center mt-8">
-          <button className="join-item btn btn-sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
-            «
-          </button>
-          <button className="join-item btn btn-sm">Page {page + 1}</button>
+        <div className="join flex justify-center mt-12 bg-base-200/50 p-1 rounded-2xl w-fit mx-auto">
           <button
-            className="join-item btn btn-sm"
+            className="join-item btn btn-sm btn-ghost"
+            disabled={page === 0}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            « Prev
+          </button>
+          <button className="join-item btn btn-sm btn-active no-animation pointer-events-none">
+            Page {page + 1} of {totalPages}
+          </button>
+          <button
+            className="join-item btn btn-sm btn-ghost"
             disabled={page >= totalPages - 1}
             onClick={() => setPage((p) => p + 1)}
           >
-            »
+            Next »
           </button>
         </div>
       )}

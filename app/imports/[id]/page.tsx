@@ -18,7 +18,7 @@ import { ExportConfig } from "../../types";
 import { Navbar } from "../../components/Dashboard/Navbar";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { extractTopics } from "../../lib/analysis";
+import { extractTopics, getTzMetadata } from "../../lib/analysis";
 import { Participant } from "../../types";
 
 const COMMON_BOTS = ["Meta AI", "WhatsApp"];
@@ -57,12 +57,9 @@ export default function ImportDashboard() {
       });
 
       // Trigger re-computation
-      // Dynamically import the heavy function only when needed (optional, but good practice if it was huge)
-      // For now, direct usage is fine as verified in plan.
       const { recomputeImportAnalysis } = await import("../../lib/recompute");
       await recomputeImportAnalysis(importId);
 
-      // alert("Settings saved and analysis re-computed.");
       setIsSettingsOpen(false);
     } catch (e) {
       console.error("Failed to recompute", e);
@@ -90,11 +87,14 @@ export default function ImportDashboard() {
 
   // Aggregated Stats
   const stats = useLiveQuery(async () => {
-    if (!importId) return null;
+    if (!importId || !importRecord) return null;
 
     // Parallel queries
-    const allMessages = await db.messages.where("importId").equals(importId).toArray();
-    const participants = await db.participants.where("importId").equals(importId).toArray();
+    const [allMessages, participants, replyEdges] = await Promise.all([
+      db.messages.where("importId").equals(importId).toArray(),
+      db.participants.where("importId").equals(importId).toArray(),
+      db.replyEdges.where("importId").equals(importId).toArray(),
+    ]);
 
     const hiddenParticipantIds = new Set(
       participants
@@ -104,14 +104,14 @@ export default function ImportDashboard() {
 
     const messages = allMessages.filter((m) => !m.senderId || !hiddenParticipantIds.has(m.senderId));
     const totalMessages = messages.length;
-
     const totalWords = messages.reduce((acc, m) => acc + (m.wordCount || 0), 0);
+
+    const config = JSON.parse(importRecord.configJson) as ExportConfig;
+    const timezone = config?.parsing?.timezone || "UTC";
 
     // Active Days
     const days = new Set(messages.map((m) => format(m.ts, "yyyy-MM-dd")));
     const activeDays = days.size;
-
-    // Avg daily (Active Days)
     const avgDailyMessages = activeDays > 0 ? totalMessages / activeDays : 0;
 
     // Timeline Data (by month)
@@ -126,7 +126,6 @@ export default function ImportDashboard() {
     const hourlyMap = new Array(24).fill(0);
 
     // Heatmap Data Structure
-    // [participantId | 'all'] -> [Day 0-6][Hour 0-23] -> { count: number, replyDeltas: number[], medianReplySeconds: number }
     type HeatmapBucket = { count: number; replyDeltas: number[]; medianReplySeconds: number };
     const heatmaps: Record<string, HeatmapBucket[][]> = {};
 
@@ -141,62 +140,31 @@ export default function ImportDashboard() {
 
     heatmaps["all"] = initGrid();
 
-    // Fetch reply edges to populate responsiveness
-    const replyEdges = await db.replyEdges.where("importId").equals(importId).toArray();
-    // Create a map of messageId -> replyEdge for O(1) lookup to find if a message is a reply
-    // Actually, we need to attribute the reply time to the REPLIER's timestamp (Time of the reply message)
-    // The edge struct: { fromMessageId, deltaSeconds, fromSenderId, ... }
-    // We can iterate edges directly to populate 'replyDeltas'.
-
     // 1. Fill Message Counts
     messages.forEach((m) => {
-      const date = new Date(m.ts);
-      const h = date.getHours();
-      const d = date.getDay();
-
-      // Global
+      const { hour: h, day: d } = getTzMetadata(m.ts, timezone);
       heatmaps["all"][d][h].count++;
 
-      // Per Participant
       if (m.senderId) {
         const key = m.senderId.toString();
         if (!heatmaps[key]) heatmaps[key] = initGrid();
         heatmaps[key][d][h].count++;
       }
-
       hourlyMap[h]++;
     });
 
     // 2. Fill Reply Deltas
-    replyEdges.forEach((edge) => {
-      // Find the timestamp of the REPLY message (fromMessage)
-      // We don't have it directly in edge, but we can look it up.
-      // Optimization: We already have 'messages' loaded.
-      // But looking up in array is O(N).
-      // Let's create a map of msgId -> ts first? Or just iterate messages again?
-      // Better: In step 1, we iterated ALL messages.
-      // Actually, we can just use a Map<id, msg> or Map<id, ts>.
-    });
-
-    // Optimization: Build a Message Map?
-    const msgMap = new Map<number, number>(); // id -> ts
+    const msgMap = new Map<number, number>();
     messages.forEach((m) => msgMap.set(m.id!, m.ts));
 
     replyEdges.forEach((edge) => {
       const ts = msgMap.get(edge.fromMessageId);
       if (!ts) return;
+      const { hour: h, day: d } = getTzMetadata(ts, timezone);
 
-      const date = new Date(ts);
-      const h = date.getHours();
-      const d = date.getDay();
-      const senderId = edge.fromSenderId;
-
-      // Global
       heatmaps["all"][d][h].replyDeltas.push(edge.deltaSeconds);
-
-      // Per Participant
-      if (senderId) {
-        const key = senderId.toString();
+      if (edge.fromSenderId) {
+        const key = edge.fromSenderId.toString();
         if (!heatmaps[key]) heatmaps[key] = initGrid();
         heatmaps[key][d][h].replyDeltas.push(edge.deltaSeconds);
       }
@@ -209,21 +177,13 @@ export default function ImportDashboard() {
           if (bucket.replyDeltas.length > 0) {
             const sorted = [...bucket.replyDeltas].sort((a, b) => a - b);
             const mid = Math.floor(sorted.length / 2);
-            if (sorted.length % 2 === 0) {
-              bucket.medianReplySeconds = (sorted[mid - 1] + sorted[mid]) / 2;
-            } else {
-              bucket.medianReplySeconds = sorted[mid];
-            }
+            bucket.medianReplySeconds = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
           }
         });
       });
     });
 
     const hourlyData = hourlyMap.map((count, hour) => ({ hour, count }));
-
-    // 4. Topic Extraction (Local-first) - DECOUPLED
-    // Return placeholder
-    const topics: { text: string; count: number }[] = [];
 
     return {
       totalMessages,
@@ -233,18 +193,18 @@ export default function ImportDashboard() {
       timelineData,
       hourlyData,
       heatmaps,
-      topics,
+      topics: [],
     };
-  }, [importId]);
+  }, [importId, importRecord]);
 
-  // Topics Data (Decoupled for better UX)
+  // Topics Data
   const topicsData = useLiveQuery(async () => {
     if (!importId) return undefined;
-
-    // Fetch messages again (optimize later if needed, but dexie is fast)
-    // We only need rawText actually, but getting full objects is simpler for now
-    const allMessages = await db.messages.where("importId").equals(importId).toArray();
-    const participants = await db.participants.where("importId").equals(importId).toArray();
+    const [allMessages, participants, stopwordsList] = await Promise.all([
+      db.messages.where("importId").equals(importId).toArray(),
+      db.participants.where("importId").equals(importId).toArray(),
+      db.stopwords.toArray(),
+    ]);
 
     const hiddenParticipantIds = new Set(
       participants
@@ -253,9 +213,6 @@ export default function ImportDashboard() {
     );
 
     const messages = allMessages.filter((m) => !m.senderId || !hiddenParticipantIds.has(m.senderId));
-
-    // Fetch global stopwords
-    const stopwordsList = await db.stopwords.toArray();
     const customStopwords = new Set(stopwordsList.map((s) => s.word));
 
     return await extractTopics(messages, customStopwords);
@@ -263,7 +220,7 @@ export default function ImportDashboard() {
 
   // Participants Data
   const participantsData = useLiveQuery(async () => {
-    if (!importId) return [];
+    if (!importId || !importRecord) return [];
 
     const [participants, msgs, replyEdges, sessions] = await Promise.all([
       db.participants.where("importId").equals(importId).toArray(),
@@ -272,7 +229,9 @@ export default function ImportDashboard() {
       db.sessions.where("importId").equals(importId).toArray(),
     ]);
 
-    // Pre-calculate double text counts by sender
+    const config = JSON.parse(importRecord.configJson) as ExportConfig;
+    const timezone = config?.parsing?.timezone || "UTC";
+
     const doubleTextCounts: Record<number, number> = {};
     let lastSenderId: number | null = null;
     msgs.forEach((m) => {
@@ -288,19 +247,7 @@ export default function ImportDashboard() {
     ).length;
 
     return participants
-      .filter((p) => {
-        if (p.isSystem) return false;
-
-        // Auto-hide bots if not already marked
-        const isBot = COMMON_BOTS.some((bot) => p.displayName.toLowerCase().includes(bot.toLowerCase()));
-        if (isBot && p.isHidden === undefined) {
-          // We can't easily side-effect the DB update inside useLiveQuery efficiently without causing loops
-          // but we can just filter it out here for now.
-          return false;
-        }
-
-        return !p.isHidden;
-      })
+      .filter((p) => !p.isSystem && !p.isHidden)
       .map((p) => {
         const pMsgs = msgs.filter((m) => m.senderId === p.id);
         const pEdges = replyEdges.filter((e) => e.fromSenderId === p.id);
@@ -309,38 +256,21 @@ export default function ImportDashboard() {
         const msgCount = pMsgs.length;
         const wordCount = pMsgs.reduce((acc, m) => acc + (m.wordCount || 0), 0);
         const yapIndex = msgCount > 0 ? wordCount / msgCount : 0;
-
-        // Initiation Rate (Relative to visible set)
         const initiationRate = totalVisibleInitiations > 0 ? (pSessions.length / totalVisibleInitiations) * 100 : 0;
 
-        // Reply Stats
         const deltas = pEdges.map((e) => e.deltaSeconds).sort((a, b) => a - b);
         const avgReplyTime = pEdges.length ? deltas.reduce((a, b) => a + b, 0) / pEdges.length : 0;
-
-        // Median Reply
         const mid = Math.floor(deltas.length / 2);
         const medianReplyTime =
           deltas.length === 0 ? 0 : deltas.length % 2 === 0 ? (deltas[mid - 1] + deltas[mid]) / 2 : deltas[mid];
 
-        // Time Waiting
         const secondsKeptWaiting = pEdges.reduce((acc, e) => acc + e.deltaSeconds, 0);
-
-        // Night Owl (00:00 - 05:00)
-        const nightOwlCount = pMsgs.filter((m) => {
-          const h = new Date(m.ts).getHours();
-          return h >= 0 && h < 5;
-        }).length;
-
-        // Early Bird (05:00 - 09:00)
+        const nightOwlCount = pMsgs.filter((m) => getTzMetadata(m.ts, timezone).hour < 5).length;
         const earlyBirdCount = pMsgs.filter((m) => {
-          const h = new Date(m.ts).getHours();
+          const h = getTzMetadata(m.ts, timezone).hour;
           return h >= 5 && h < 9;
         }).length;
-
-        // Ghost Count (replies > 12h)
         const ghostCount = pEdges.filter((e) => e.deltaSeconds > 12 * 3600).length;
-
-        // Double Text
         const doubleTextCount = doubleTextCounts[p.id!] || 0;
 
         return {
@@ -359,7 +289,7 @@ export default function ImportDashboard() {
           doubleTextCount,
         };
       });
-  }, [importId]);
+  }, [importId, importRecord]);
 
   if (!importRecord || !stats) {
     return (
@@ -379,76 +309,42 @@ export default function ImportDashboard() {
 
       <main className="flex-1 overflow-y-auto w-full max-w-6xl mx-auto px-4 md:px-6 py-6 pb-20">
         <div className="flex flex-col gap-6">
-          {/* Tab Navigation */}
           <div role="tablist" className="tabs tabs-boxed bg-base-200/50 p-1 inline-block w-fit">
-            <a
-              role="tab"
-              className={`tab ${activeTab === "overview" ? "tab-active bg-base-100 shadow-sm" : ""}`}
-              onClick={() => setActiveTab("overview")}
-            >
-              Overview
-            </a>
-            <a
-              role="tab"
-              className={`tab ${activeTab === "sessions" ? "tab-active bg-base-100 shadow-sm" : ""}`}
-              onClick={() => setActiveTab("sessions")}
-            >
-              Sessions
-            </a>
-            <a
-              role="tab"
-              className={`tab ${activeTab === "moments" ? "tab-active bg-base-100 shadow-sm" : ""}`}
-              onClick={() => setActiveTab("moments")}
-            >
-              Moments
-              <span className="ml-2 badge badge-xs badge-primary">Beta</span>
-            </a>
-            <a
-              role="tab"
-              className={`tab ${activeTab === "leaderboard" ? "tab-active bg-base-100 shadow-sm" : ""}`}
-              onClick={() => setActiveTab("leaderboard")}
-            >
-              Leaderboard
-            </a>
-            <a
-              role="tab"
-              className={`tab ${activeTab === "history" ? "tab-active bg-base-100 shadow-sm" : ""}`}
-              onClick={() => setActiveTab("history")}
-            >
-              History
-            </a>
+            {["overview", "sessions", "moments", "leaderboard", "history"].map((t) => (
+              <a
+                key={t}
+                role="tab"
+                className={`tab ${activeTab === t ? "tab-active bg-base-100 shadow-sm" : ""}`}
+                onClick={() => setActiveTab(t)}
+              >
+                {t.charAt(0).toUpperCase() + t.slice(1)}
+              </a>
+            ))}
           </div>
 
           <div className="flex-1 min-h-0">
             {activeTab === "overview" && (
               <section className="animate-in fade-in duration-300">
-                <div className="">
-                  <h2 className="sr-only">Overview</h2>
-                  <Overview
-                    stats={stats}
-                    timelineData={stats.timelineData}
-                    hourlyData={stats.hourlyData}
-                    heatmapData={stats.heatmaps}
-                    participants={participantsData}
-                    topics={topicsData || []}
-                    topicsLoading={topicsData === undefined}
-                    onTopicClick={(topic) => {
-                      const newParams = new URLSearchParams(searchParams.toString());
-                      newParams.set("tab", "history");
-                      newParams.set("q", topic);
-                      router.replace(`?${newParams.toString()}`);
-                    }}
-                    onBlockTopic={async (topic) => {
-                      // Add to global stopwords
-                      try {
-                        await db.stopwords.add({ word: topic.toLowerCase() });
-                      } catch (e) {
-                        /* ignore duplicate */
-                      }
-                    }}
-                  />
-                </div>
-
+                <Overview
+                  stats={stats}
+                  timelineData={stats.timelineData}
+                  hourlyData={stats.hourlyData}
+                  heatmapData={stats.heatmaps}
+                  participants={participantsData}
+                  topics={topicsData || []}
+                  topicsLoading={topicsData === undefined}
+                  onTopicClick={(topic) => {
+                    const newParams = new URLSearchParams(searchParams.toString());
+                    newParams.set("tab", "history");
+                    newParams.set("q", topic);
+                    router.replace(`?${newParams.toString()}`);
+                  }}
+                  onBlockTopic={async (topic) => {
+                    try {
+                      await db.stopwords.add({ word: topic.toLowerCase() });
+                    } catch (e) {}
+                  }}
+                />
                 <div className="mt-8">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-semibold">Participants</h2>
@@ -464,135 +360,65 @@ export default function ImportDashboard() {
               </section>
             )}
 
-            {activeTab === "sessions" && (
-              <section className="animate-in fade-in duration-300">
-                <SessionsList importId={importId} />
-              </section>
-            )}
-
-            {activeTab === "moments" && (
-              <section className="animate-in fade-in duration-300">
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold mb-2">Interesting Moments</h2>
-                  <p className="text-base-content/60">Key events and anomalies detected in your conversation.</p>
-                </div>
-                {/* Grid is handled inside MomentsFeed now to include filters. */}
-                <MomentsFeed importId={importId} />
-              </section>
-            )}
-
-            {activeTab === "leaderboard" && (
-              <section className="animate-in fade-in duration-300">
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold mb-2">The Leaderboard</h2>
-                  <p className="text-base-content/60">Rankings across various metrics and behavioral patterns.</p>
-                </div>
-                <Leaderboard participants={participantsData || []} />
-              </section>
-            )}
-
+            {activeTab === "sessions" && <SessionsList importId={importId} />}
+            {activeTab === "moments" && <MomentsFeed importId={importId} />}
+            {activeTab === "leaderboard" && <Leaderboard participants={participantsData || []} />}
             {activeTab === "history" && (
-              <section className="animate-in fade-in duration-300 h-full flex flex-col">
-                {searchParams.get("start") && (
-                  <div className="mb-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="badge badge-lg badge-primary gap-2 p-3 font-semibold shadow-sm">
-                        Session View
-                        <button
-                          className="hover:scale-110 transition-transform"
-                          onClick={() => {
-                            const newParams = new URLSearchParams(searchParams.toString());
-                            newParams.delete("start");
-                            newParams.delete("end");
-                            router.replace(`?${newParams.toString()}`);
-                          }}
-                          title="Exit session view"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <span className="text-xs opacity-60 hidden sm:inline">Showing specific time range</span>
-                    </div>
-                  </div>
-                )}
-                <div className="flex-1 min-h-0">
-                  <ChatViewer
-                    importId={importId}
-                    timeRange={
-                      searchParams.get("start") && searchParams.get("end")
-                        ? {
-                            startTs: parseInt(searchParams.get("start")!),
-                            endTs: parseInt(searchParams.get("end")!),
-                          }
-                        : undefined
-                    }
-                    initialSearchTerm={searchParams.get("q") || ""}
-                  />
-                </div>
-              </section>
+              <ChatViewer
+                importId={importId}
+                timeRange={
+                  searchParams.get("start") && searchParams.get("end")
+                    ? {
+                        startTs: parseInt(searchParams.get("start")!),
+                        endTs: parseInt(searchParams.get("end")!),
+                      }
+                    : undefined
+                }
+                initialSearchTerm={searchParams.get("q") || ""}
+              />
             )}
           </div>
         </div>
       </main>
 
-      {/* Settings Modal */}
       <dialog id="settings_modal" className="modal modal-bottom sm:modal-middle" open={isSettingsOpen}>
         <div className="modal-box p-0 w-11/12 max-w-2xl bg-base-100">
-          <form method="dialog">
-            <button
-              className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-              onClick={() => setIsSettingsOpen(false)}
-            >
-              ✕
-            </button>
-          </form>
-
+          <button
+            className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+            onClick={() => setIsSettingsOpen(false)}
+          >
+            ✕
+          </button>
           <div className="p-6">
             <h3 className="font-bold text-lg mb-4">Dashboard Settings</h3>
             {importRecord?.configJson && (
-              <ConfigPanel
-                config={JSON.parse(importRecord.configJson)}
-                onSave={handleConfigSave}
-                onReset={() => console.log("Reset in modal not fully implied, uses default")}
-              />
+              <ConfigPanel config={JSON.parse(importRecord.configJson)} onSave={handleConfigSave} onReset={() => {}} />
             )}
             {isRecomputing && (
               <div className="absolute inset-0 bg-base-100/80 flex items-center justify-center z-10 rounded-xl">
-                <div className="flex flex-col items-center gap-2">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                  <p className="font-medium animate-pulse">Re-analyzing conversation...</p>
-                </div>
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
             )}
-
             <div className="divider my-6">Danger Zone</div>
-            <div className="bg-error/10 border border-error/20 p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="bg-error/10 border border-error/20 p-4 rounded-xl flex items-center justify-between">
               <div>
                 <h4 className="font-bold text-error">Destroy All Data</h4>
-                <p className="text-sm opacity-70">
-                  Permanently delete all imported chats and analysis from this device.
-                </p>
+                <p className="text-sm opacity-70">Delete all analysis from this device.</p>
               </div>
               <button className="btn btn-error btn-outline btn-sm" onClick={handleDeleteAllData}>
-                Delete Everything
+                Delete
               </button>
             </div>
-
             <div className="divider my-6">Participant Visibility</div>
-            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+            <div className="space-y-2 max-h-60 overflow-y-auto">
               {allParticipants
                 ?.filter((p) => !p.isSystem)
                 .map((p) => (
                   <div key={p.id} className="flex items-center justify-between p-3 bg-base-200/50 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full ${p.isHidden ? "bg-base-content/20" : "bg-success"}`} />
-                      <span className={`text-sm font-semibold ${p.isHidden ? "opacity-40" : ""}`}>{p.displayName}</span>
-                    </div>
+                    <span className={`text-sm font-semibold ${p.isHidden ? "opacity-40" : ""}`}>{p.displayName}</span>
                     <button
-                      className={`btn btn-xs btn-ghost gap-2 ${p.isHidden ? "text-primary" : "opacity-40"}`}
-                      onClick={async () => {
-                        await db.participants.update(p.id!, { isHidden: !p.isHidden });
-                      }}
+                      className="btn btn-xs btn-ghost text-primary"
+                      onClick={async () => await db.participants.update(p.id!, { isHidden: !p.isHidden })}
                     >
                       {p.isHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                       {p.isHidden ? "Show" : "Hide"}
@@ -602,9 +428,6 @@ export default function ImportDashboard() {
             </div>
           </div>
         </div>
-        <form method="dialog" className="modal-backdrop">
-          <button onClick={() => setIsSettingsOpen(false)}>close</button>
-        </form>
       </dialog>
     </div>
   );
