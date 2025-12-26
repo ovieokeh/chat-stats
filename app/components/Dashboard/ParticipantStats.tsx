@@ -15,7 +15,7 @@ interface ParticipantStatsProps {
     initiationRate: number; // percentage
     medianReplyTime: number; // seconds
     avgReplyTime: number; // seconds
-    daysKeptWaiting: number; // days
+    secondsKeptWaiting: number; // seconds
   }[];
 }
 
@@ -91,7 +91,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                 </div>
                 <span className="text-sm font-medium opacity-70">Time Waiting</span>
               </div>
-              <span className="text-xl font-semibold tabular-nums">{p.daysKeptWaiting.toFixed(1)}d</span>
+              <span className="text-xl font-semibold tabular-nums">{formatDurationHuman(p.secondsKeptWaiting)}</span>
             </div>
           </div>
         </div>

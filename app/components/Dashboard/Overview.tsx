@@ -6,6 +6,8 @@ import { ChartCard } from "../UI/ChartCard";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, AreaChart, Area, CartesianGrid } from "recharts";
 import { formatNumber } from "../../lib/format";
 
+import { Heatmap } from "./Heatmap";
+
 // Placeholder types for props - in real app, these would come from the page fetching data
 interface OverviewProps {
   stats: {
@@ -16,9 +18,10 @@ interface OverviewProps {
   };
   timelineData: Array<{ date: string; messages: number }>;
   hourlyData: Array<{ hour: number; count: number }>;
+  heatmapData: number[][];
 }
 
-export const Overview: React.FC<OverviewProps> = ({ stats, timelineData, hourlyData }) => {
+export const Overview: React.FC<OverviewProps> = ({ stats, timelineData, hourlyData, heatmapData }) => {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* KPI Grid */}
@@ -30,6 +33,12 @@ export const Overview: React.FC<OverviewProps> = ({ stats, timelineData, hourlyD
       </div>
 
       {/* Main Charts Area */}
+      <div className="grid grid-cols-1 gap-4">
+        <ChartCard title="Weekly Activity Heatmap" takeaway="Darker squares show your most intense chat times.">
+          <Heatmap data={heatmapData} />
+        </ChartCard>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <ChartCard title="Message Volume" takeaway="Visualize the ebb and flow of conversation over time.">
           <ResponsiveContainer width="100%" height="100%">

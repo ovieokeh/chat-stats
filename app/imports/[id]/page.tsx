@@ -7,6 +7,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { Overview } from "../../components/Dashboard/Overview";
 import { ParticipantStats } from "../../components/Dashboard/ParticipantStats";
 import { ChatViewer } from "../../components/Dashboard/ChatViewer";
+import { SessionsList } from "../../components/Dashboard/SessionsList";
 import { MomentsFeed } from "../../components/Dashboard/MomentsFeed";
 import { format } from "date-fns";
 import { Loader2, ArrowLeft } from "lucide-react";
@@ -28,7 +29,7 @@ export default function ImportDashboard() {
 
   // Tab state synced with URL
   const tabParam = searchParams.get("tab");
-  const activeTab = tabParam === "moments" || tabParam === "history" ? tabParam : "overview";
+  const activeTab = tabParam === "moments" || tabParam === "history" || tabParam === "sessions" ? tabParam : "overview";
 
   const setActiveTab = (tab: string) => {
     const newParams = new URLSearchParams(searchParams.toString());
@@ -96,10 +97,21 @@ export default function ImportDashboard() {
 
     // Hourly Data
     const hourlyMap = new Array(24).fill(0);
+
+    // Heatmap Data [Day 0-6][Hour 0-23]
+    const heatmapGrid = Array(7)
+      .fill(0)
+      .map(() => Array(24).fill(0));
+
     messages.forEach((m) => {
-      const h = new Date(m.ts).getHours();
+      const date = new Date(m.ts);
+      const h = date.getHours();
+      const d = date.getDay();
+
       hourlyMap[h]++;
+      heatmapGrid[d][h]++;
     });
+
     const hourlyData = hourlyMap.map((count, hour) => ({ hour, count }));
 
     return {
@@ -109,6 +121,7 @@ export default function ImportDashboard() {
       avgDailyMessages,
       timelineData,
       hourlyData,
+      heatmapGrid,
     };
   }, [importId]);
 
@@ -143,7 +156,7 @@ export default function ImportDashboard() {
         const medianReplyTime = deltas.length > 0 ? deltas[mid] : 0;
 
         // Time Waiting (How long THIS person made OTHERS wait -> Sum of their reply deltas)
-        const daysKeptWaiting = pEdges.reduce((acc, e) => acc + e.deltaSeconds, 0) / (60 * 60 * 24);
+        const secondsKeptWaiting = pEdges.reduce((acc, e) => acc + e.deltaSeconds, 0);
 
         return {
           id: p.id!,
@@ -154,7 +167,7 @@ export default function ImportDashboard() {
           initiationRate,
           avgReplyTime,
           medianReplyTime,
-          daysKeptWaiting,
+          secondsKeptWaiting,
         };
       });
   }, [importId]);
@@ -198,6 +211,13 @@ export default function ImportDashboard() {
         </a>
         <a
           role="tab"
+          className={`tab ${activeTab === "sessions" ? "tab-active bg-base-100 shadow-sm" : ""}`}
+          onClick={() => setActiveTab("sessions")}
+        >
+          Sessions
+        </a>
+        <a
+          role="tab"
           className={`tab ${activeTab === "moments" ? "tab-active bg-base-100 shadow-sm" : ""}`}
           onClick={() => setActiveTab("moments")}
         >
@@ -220,8 +240,19 @@ export default function ImportDashboard() {
 
           <div className="mt-8">
             <h2 className="sr-only">Overview</h2>
-            <Overview stats={stats} timelineData={stats.timelineData} hourlyData={stats.hourlyData} />
+            <Overview
+              stats={stats}
+              timelineData={stats.timelineData}
+              hourlyData={stats.hourlyData}
+              heatmapData={stats.heatmapGrid}
+            />
           </div>
+        </section>
+      )}
+
+      {activeTab === "sessions" && (
+        <section className="animate-in fade-in duration-300">
+          <SessionsList importId={importId} />
         </section>
       )}
 
@@ -237,8 +268,37 @@ export default function ImportDashboard() {
       )}
 
       {activeTab === "history" && (
-        <section className="animate-in fade-in duration-300 h-[600px]">
-          <ChatViewer importId={importId} />
+        <section className="animate-in fade-in duration-300 h-[calc(100vh-180px)] min-h-[500px] flex flex-col">
+          {searchParams.get("start") && (
+            <div className="mb-2 flex items-center gap-2">
+              <div className="badge badge-lg badge-primary gap-2 p-3">
+                Session View
+                <button
+                  className="btn btn-circle btn-xs btn-ghost text-white"
+                  onClick={() => {
+                    const newParams = new URLSearchParams(searchParams.toString());
+                    newParams.delete("start");
+                    newParams.delete("end");
+                    router.replace(`?${newParams.toString()}`);
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+              <span className="text-xs opacity-60">Showing specific time range</span>
+            </div>
+          )}
+          <ChatViewer
+            importId={importId}
+            timeRange={
+              searchParams.get("start") && searchParams.get("end")
+                ? {
+                    startTs: parseInt(searchParams.get("start")!),
+                    endTs: parseInt(searchParams.get("end")!),
+                  }
+                : undefined
+            }
+          />
         </section>
       )}
 

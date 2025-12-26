@@ -4,6 +4,15 @@ Based on the current architecture (Local-first, IndexedDB) and recent user feedb
 
 ## 🚀 High Value / Low Effort (Quick Wins)
 
+### 0. Sessions View (The Context King)
+
+- **Description**: A dedicated list of conversation sessions (grouped by time gaps) with start times, duration, and message counts.
+- **Why**: "Initiation Rate" implies sessions exist, but users need to _see_ them to understand the flow.
+- **Effort**: **Medium**. Logic exists; needs a UI component.
+- **Verdict**: Critical missing piece.
+
+### 1. Yap Index (Words per Message)
+
 ### 1. Yap Index (Words per Message)
 
 - **Description**: Ratio of Total Words / Total Messages per participant.
@@ -27,12 +36,12 @@ Based on the current architecture (Local-first, IndexedDB) and recent user feedb
 - **Effort**: **Medium**. Requires sorting `reply_edges` and computing quantiles.
 - **Verdict**: Essential for the "Participants" tab.
 
-### 4. Reply-Time Heatmap
+### 4. Reply-Time Heatmap (Day x Hour)
 
-- **Description**: 2D Grid (Hour of Day × Weekday) showing when each person is most responsive (or average reply time in that slot).
-- **Why**: "Lifestyle mismatch" detector. Shows if you reply instantly at 2 AM but ignore messages during work hours.
-- **Effort**: **Medium**. Data aggregation is straightforward; visualization requires a new heatmap component.
-- **Verdict**: Strong visual addition.
+- **Description**: 2D Grid (Hour of Day × Weekday) showing when each person is most responsive.
+- **Why**: "Lifestyle mismatch" detector. Current "Activity by Hour" bar chart is insufficient.
+- **Effort**: **Medium**. Data aggregation is straightforward; requires a Grid/Heatmap component.
+- **Verdict**: Strong visual addition. **Missing from current build.**
 
 ## 💡 Novel / Experimental
 
