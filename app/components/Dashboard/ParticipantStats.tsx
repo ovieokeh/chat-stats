@@ -4,6 +4,8 @@ import React from "react";
 import { MessageSquare, Clock, Zap } from "lucide-react";
 import { formatDurationHuman } from "../../lib/format";
 import { Skeleton } from "../UI/Skeleton";
+import { usePrivacy } from "../../context/PrivacyContext";
+import { obfuscateName } from "../../lib/utils";
 
 interface ParticipantStatsProps {
   participants: {
@@ -20,6 +22,8 @@ interface ParticipantStatsProps {
 }
 
 export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants }) => {
+  const { isPrivacyMode } = usePrivacy();
+
   if (!participants) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -51,7 +55,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
         <div key={p.id} className="card bg-base-100 border border-base-200 shadow-xl rounded-3xl overflow-hidden">
           <div className="card-body p-0">
             <div className="p-6 bg-base-200/30 border-b border-base-200">
-              <h3 className="text-2xl font-black tracking-tight">{p.name}</h3>
+              <h3 className="text-2xl font-black tracking-tight">{isPrivacyMode ? obfuscateName(p.name) : p.name}</h3>
             </div>
 
             <div className="p-6">

@@ -8,6 +8,8 @@ import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { getAvatarColor } from "../../lib/colors";
 import { Skeleton } from "../UI/Skeleton";
+import { usePrivacy } from "../../context/PrivacyContext";
+import { obfuscateName, obfuscateText } from "../../lib/utils";
 
 interface ChatViewerProps {
   importId: number;
@@ -55,6 +57,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
   const [primaryViewerId, setPrimaryViewerId] = useState<number | null>(null);
   const [showFullHistory, setShowFullHistory] = useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const { isPrivacyMode } = usePrivacy();
 
   // Scroll to top on page change
   useEffect(() => {
@@ -107,9 +110,12 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
 
   const participantMap = React.useMemo(() => {
     const map = new Map<number, string>();
-    participants?.forEach((p) => map.set(p.id!, p.displayName));
+    participants?.forEach((p) => {
+      const name = isPrivacyMode ? obfuscateName(p.displayName) : p.displayName;
+      map.set(p.id!, name);
+    });
     return map;
-  }, [participants]);
+  }, [participants, isPrivacyMode]);
 
   // auto select primary viewer
   useEffect(() => {
@@ -327,7 +333,10 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
               <div className={`chat ${chatClass}`}>
                 {isSystem ? (
                   <div className="text-xs text-base-content/50 bg-base-200 px-3 py-1 rounded-full text-center max-w-lg mx-auto leading-relaxed my-2">
-                    <HighlightedText text={msg.rawText || ""} highlight={debouncedSearch} />
+                    <HighlightedText
+                      text={isPrivacyMode ? obfuscateText(msg.rawText || "") : msg.rawText || ""}
+                      highlight={debouncedSearch}
+                    />
                   </div>
                 ) : (
                   <>
@@ -344,7 +353,10 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
                     </div>
                     <div className={bubbleClass}>
                       <div className="whitespace-pre-wrap break-words">
-                        <HighlightedText text={msg.rawText || ""} highlight={debouncedSearch} />
+                        <HighlightedText
+                          text={isPrivacyMode ? obfuscateText(msg.rawText || "") : msg.rawText || ""}
+                          highlight={debouncedSearch}
+                        />
                       </div>
                     </div>
                   </>

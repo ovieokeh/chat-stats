@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
-import { db } from "../../lib/db";
+import { db, clearDatabase } from "../../lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Overview } from "../../components/Dashboard/Overview";
 import { ParticipantStats } from "../../components/Dashboard/ParticipantStats";
@@ -10,12 +10,9 @@ import { ChatViewer } from "../../components/Dashboard/ChatViewer";
 import { SessionsList } from "../../components/Dashboard/SessionsList";
 import { MomentsFeed } from "../../components/Dashboard/MomentsFeed";
 import { format } from "date-fns";
-import { Loader2, ArrowLeft, X } from "lucide-react";
-import Link from "next/link";
-import { formatDurationSimple } from "../../lib/format";
+import { Loader2, X } from "lucide-react";
 import { ConfigPanel } from "../../components/ConfigPanel";
 import { ExportConfig } from "../../types";
-import { Settings } from "lucide-react";
 import { Navbar } from "../../components/Dashboard/Navbar";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -64,6 +61,18 @@ export default function ImportDashboard() {
       alert("Error saving settings");
     } finally {
       setIsRecomputing(false);
+    }
+  };
+
+  const handleDeleteAllData = async () => {
+    if (confirm("Are you sure you want to permanently delete ALL imported data? This cannot be undone.")) {
+      try {
+        await clearDatabase();
+        router.push("/");
+      } catch (e) {
+        console.error("Failed to delete data", e);
+        alert("Error deleting data");
+      }
     }
   };
 
@@ -446,6 +455,19 @@ export default function ImportDashboard() {
                 </div>
               </div>
             )}
+
+            <div className="divider my-6">Danger Zone</div>
+            <div className="bg-error/10 border border-error/20 p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
+              <div>
+                <h4 className="font-bold text-error">Destroy All Data</h4>
+                <p className="text-sm opacity-70">
+                  Permanently delete all imported chats and analysis from this device.
+                </p>
+              </div>
+              <button className="btn btn-error btn-outline btn-sm" onClick={handleDeleteAllData}>
+                Delete Everything
+              </button>
+            </div>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">

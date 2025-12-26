@@ -63,6 +63,21 @@ export default function Home() {
             </div>
           </div>
         ) : null}
+
+        <div className="pt-12 pb-8 flex justify-center border-t border-base-300/30">
+          <button
+            className="text-xs font-semibold opacity-30 hover:opacity-100 hover:text-error transition-all uppercase tracking-widest p-2"
+            onClick={async () => {
+              if (confirm("Reset everything? All your imported data will be wiped.")) {
+                const { clearDatabase } = await import("./lib/db");
+                await clearDatabase();
+                window.location.reload();
+              }
+            }}
+          >
+            Clear Application Data
+          </button>
+        </div>
       </div>
     </main>
   );

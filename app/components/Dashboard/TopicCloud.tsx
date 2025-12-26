@@ -2,6 +2,8 @@
 
 import React, { useMemo } from "react";
 import { X } from "lucide-react";
+import { usePrivacy } from "../../context/PrivacyContext";
+import { obfuscateText } from "../../lib/utils";
 
 interface Topic {
   text: string;
@@ -16,6 +18,7 @@ interface TopicCloudProps {
 }
 
 export const TopicCloud: React.FC<TopicCloudProps> = ({ topics, onTopicClick, onBlockTopic, isLoading }) => {
+  const { isPrivacyMode } = usePrivacy();
   const maxCount = useMemo(() => Math.max(...topics.map((t) => t.count), 1), [topics]);
 
   // Function to clamp sizes
@@ -59,20 +62,22 @@ export const TopicCloud: React.FC<TopicCloudProps> = ({ topics, onTopicClick, on
             style={{ fontSize: getScale(topic.count), lineHeight: "1.2" }}
             title={`${topic.count} messages`}
           >
-            {topic.text}
+            {isPrivacyMode ? obfuscateText(topic.text) : topic.text}
           </button>
 
           {/* Block Button - Visible on Hover */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onBlockTopic(topic.text);
-            }}
-            className="opacity-0 group-hover:opacity-100 absolute -top-1 -right-2 p-0.5 bg-base-100 shadow-sm rounded-full text-base-content/40 hover:text-error hover:bg-base-200 transition-all scale-75"
-            title="Hide this topic"
-          >
-            <X className="w-3 h-3" />
-          </button>
+          {!isPrivacyMode && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onBlockTopic(topic.text);
+              }}
+              className="opacity-0 group-hover:opacity-100 absolute -top-1 -right-2 p-0.5 bg-base-100 shadow-sm rounded-full text-base-content/40 hover:text-error hover:bg-base-200 transition-all scale-75"
+              title="Hide this topic"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
         </div>
       ))}
     </div>
