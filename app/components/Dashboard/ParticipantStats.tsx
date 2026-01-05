@@ -27,6 +27,7 @@ interface Participant {
   longestReplyTime: number;
   messageShare: number;
   carryScore: number;
+  leftOnReadCount: number;
 }
 
 interface ParticipantStatsProps {
@@ -229,18 +230,29 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                 </div>
               </div>
 
-              {/* "Made them wait" - The spicy stat */}
-              <div className="bg-error/5 border border-error/10 rounded-2xl p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
+              {/* Drama Stats Row */}
+              <div className="flex gap-3">
+                {/* Left on Read */}
+                <div className="flex-1 bg-warning/10 border border-warning/10 rounded-2xl p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center text-xl">
+                    👻
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase opacity-50 block">Left you on Read</span>
+                    <span className="text-lg font-black text-warning">{p.leftOnReadCount}x</span>
+                  </div>
+                </div>
+
+                {/* Kept you waiting */}
+                <div className="flex-1 bg-error/5 border border-error/10 rounded-2xl p-4 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center">
                     <Timer size={18} className="text-error" />
                   </div>
                   <div>
-                    <span className="text-xs font-bold uppercase opacity-50 block">Kept you waiting</span>
+                    <span className="text-[10px] font-bold uppercase opacity-50 block">Kept you waiting</span>
                     <span className="text-lg font-black text-error">{formatDurationHuman(p.secondsKeptWaiting)}</span>
                   </div>
                 </div>
-                <span className="text-2xl">⏰</span>
               </div>
             </div>
           </motion.div>

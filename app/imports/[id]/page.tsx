@@ -283,6 +283,17 @@ export default function ImportDashboard() {
         // Higher = this person is putting in more effort
         const carryScore = initiationRate * 0.6 + messageShare * 0.4;
 
+        // "Left on Read" count: sessions where this person did NOT send the last message
+        // (meaning they left the other person hanging as the conversation died)
+        const leftOnReadCount = sessions.filter((s) => {
+          // Get last message in session
+          const sessionMsgs = msgs.filter((m) => m.ts >= s.startTs && m.ts <= s.endTs && m.senderId);
+          if (sessionMsgs.length === 0) return false;
+          const lastMsg = sessionMsgs[sessionMsgs.length - 1];
+          // If last message was NOT by this person, they left someone on read
+          return lastMsg.senderId !== p.id && lastMsg.senderId !== undefined;
+        }).length;
+
         return {
           id: p.id!,
           name: p.displayName,
@@ -300,6 +311,7 @@ export default function ImportDashboard() {
           longestReplyTime,
           messageShare,
           carryScore,
+          leftOnReadCount,
         };
       });
   }, [importId, importRecord]);
@@ -396,7 +408,7 @@ export default function ImportDashboard() {
       </main>
 
       <dialog id="settings_modal" className="modal modal-bottom sm:modal-middle" open={isSettingsOpen}>
-        <div className="modal-box p-0 w-11/12 max-w-2xl bg-base-100">
+        <div className="modal-box p-0 max-w-2xl bg-base-100">
           <button
             className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
             onClick={() => setIsSettingsOpen(false)}
