@@ -25,6 +25,8 @@ interface Participant {
   ghostCount: number;
   doubleTextCount: number;
   longestReplyTime: number;
+  messageShare: number;
+  carryScore: number;
 }
 
 interface ParticipantStatsProps {
@@ -118,7 +120,6 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {participants.map((p, index) => {
         const badges = getBadges(p);
-        const messageShare = totalMessages > 0 ? (p.msgCount / totalMessages) * 100 : 0;
 
         const handleHide = async () => {
           if (confirm(`Hide ${p.name} from analysis? You can unhide them in settings.`)) {
@@ -158,7 +159,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                         <EyeOff className="w-3 h-3" />
                       </button>
                     </div>
-                    <p className="text-sm opacity-50">{messageShare.toFixed(0)}% of all messages</p>
+                    <p className="text-sm opacity-50">{p.messageShare.toFixed(0)}% of all messages</p>
                   </div>
                 </div>
               </div>
@@ -177,6 +178,23 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                   ))}
                 </div>
               )}
+
+              {/* Carrying the Chat - Hero Metric */}
+              <div className="relative mt-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl p-4 border border-primary/10">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold uppercase opacity-50">Carrying the Chat</span>
+                  <span className="text-lg font-black text-primary">{p.carryScore.toFixed(0)}%</span>
+                </div>
+                <div className="w-full h-2 bg-base-300 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-primary to-secondary rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(p.carryScore, 100)}%` }}
+                    transition={{ duration: 0.8, delay: 0.3 }}
+                  />
+                </div>
+                <p className="text-[10px] opacity-40 mt-1">Based on who starts convos + message volume</p>
+              </div>
             </div>
 
             {/* Stats Grid - Clean Pills */}

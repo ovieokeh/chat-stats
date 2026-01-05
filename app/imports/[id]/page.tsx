@@ -275,6 +275,14 @@ export default function ImportDashboard() {
         const ghostCount = pEdges.filter((e) => e.deltaSeconds > 12 * 3600).length;
         const doubleTextCount = doubleTextCounts[p.id!] || 0;
 
+        // Calculate total messages from visible participants for message share
+        const totalVisibleMessages = msgs.filter((m) => m.senderId && visibleParticipantIds.has(m.senderId)).length;
+        const messageShare = totalVisibleMessages > 0 ? (msgCount / totalVisibleMessages) * 100 : 0;
+
+        // "Carrying the Relationship" score: weighted combo of initiation + volume
+        // Higher = this person is putting in more effort
+        const carryScore = initiationRate * 0.6 + messageShare * 0.4;
+
         return {
           id: p.id!,
           name: p.displayName,
@@ -290,6 +298,8 @@ export default function ImportDashboard() {
           ghostCount,
           doubleTextCount,
           longestReplyTime,
+          messageShare,
+          carryScore,
         };
       });
   }, [importId, importRecord]);
@@ -328,7 +338,7 @@ export default function ImportDashboard() {
           <div className="flex-1 min-h-0">
             {activeTab === "overview" && (
               <section className="animate-in fade-in duration-300">
-                <div className="mt-8">
+                <div className="mb-8">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-semibold">Participants</h2>
                     <button

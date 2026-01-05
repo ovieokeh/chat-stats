@@ -162,7 +162,7 @@ export const Overview: React.FC<OverviewProps> = ({
           </div>
           <div className="lg:col-span-1">
             <ChartCard title="Topic Cloud" takeaway="What you talk about most. Click to filter history.">
-              <div className="h-[300px] -m-2">
+              <div className="h-full max-h-[300px] -m-2">
                 <TopicCloud
                   topics={topics}
                   onTopicClick={onTopicClick}
