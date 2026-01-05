@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { KpiTile } from "../UI/KpiTile";
+import { OverviewHero } from "./OverviewHero";
 import { ChartCard } from "../UI/ChartCard";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, AreaChart, Area, CartesianGrid } from "recharts";
 import { formatNumber } from "../../lib/format";
@@ -97,12 +97,8 @@ export const Overview: React.FC<OverviewProps> = ({
         </button>
       </div>
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-        <KpiTile label="Total Messages" value={formatNumber(stats.totalMessages)} />
-        <KpiTile label="Active Days" value={stats.activeDays} />
-        <KpiTile label="Msgs / Active Day" value={Math.round(stats.avgDailyMessages)} />
-      </div>
+      {/* Hero Section */}
+      <OverviewHero stats={stats} />
 
       <ShareModal
         isOpen={isShareModalOpen}

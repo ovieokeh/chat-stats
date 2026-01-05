@@ -328,6 +328,19 @@ export default function ImportDashboard() {
           <div className="flex-1 min-h-0">
             {activeTab === "overview" && (
               <section className="animate-in fade-in duration-300">
+                <div className="mt-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold">Participants</h2>
+                    <button
+                      onClick={() => setIsSettingsOpen(true)}
+                      className="text-xs btn btn-ghost btn-xs gap-1 opacity-50 hover:opacity-100"
+                    >
+                      <Users className="w-3 h-3" /> Manage
+                    </button>
+                  </div>
+                  <ParticipantStats participants={participantsData || []} />
+                </div>
+
                 <Overview
                   stats={stats}
                   timelineData={stats.timelineData}
@@ -348,18 +361,6 @@ export default function ImportDashboard() {
                     } catch (e) {}
                   }}
                 />
-                <div className="mt-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold">Participants</h2>
-                    <button
-                      onClick={() => setIsSettingsOpen(true)}
-                      className="text-xs btn btn-ghost btn-xs gap-1 opacity-50 hover:opacity-100"
-                    >
-                      <Users className="w-3 h-3" /> Manage
-                    </button>
-                  </div>
-                  <ParticipantStats participants={participantsData || []} />
-                </div>
               </section>
             )}
 

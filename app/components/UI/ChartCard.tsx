@@ -11,7 +11,7 @@ interface ChartCardProps {
 
 export const ChartCard: React.FC<ChartCardProps> = ({ title, children, takeaway, className, action }) => {
   return (
-    <div className={clsx("card bg-base-100 border border-base-300/60 rounded-2xl shadow-sm", className)}>
+    <div className={clsx("card bg-base-100 border border-base-200 rounded-[2rem] shadow-sm", className)}>
       <div className="card-body p-5 md:p-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="card-title text-base md:text-lg">{title}</h3>
