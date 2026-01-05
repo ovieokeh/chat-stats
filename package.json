@@ -17,6 +17,7 @@
     "dexie": "^4.2.1",
     "dexie-react-hooks": "^4.2.0",
     "emoji-regex": "^10.6.0",
+    "framer-motion": "^12.23.26",
     "franc": "^6.2.0",
     "fuse.js": "^7.1.0",
     "html-to-image": "^1.11.13",
@@ -41,8 +42,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",
-    "typescript": "^5",
     "tsx": "^4.19.2",
+    "typescript": "^5",
     "vitest": "^4.0.16"
   }
 }

@@ -1,19 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  MessageSquare,
-  Zap,
-  FastForward,
-  UserPlus,
-  Moon,
-  Sun,
-  Ghost,
-  Copy,
-  TrendingUp,
-  BookOpen,
-  Share2,
-} from "lucide-react";
+import { MessageSquare, FastForward, UserPlus, Moon, Sun, Ghost, Copy, TrendingUp, Share2 } from "lucide-react";
 import { formatDurationHuman } from "../../lib/format";
 import { usePrivacy } from "../../context/PrivacyContext";
 import { obfuscateName } from "../../lib/utils";
@@ -34,6 +22,7 @@ interface Participant {
   earlyBirdCount: number;
   ghostCount: number;
   doubleTextCount: number;
+  longestReplyTime: number;
 }
 
 interface LeaderboardProps {
@@ -53,15 +42,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ participants }) => {
       format: (val: number) => val.toLocaleString(),
       metric: "msgs",
       sort: (a: Participant, b: Participant) => b.msgCount - a.msgCount,
-    },
-    {
-      title: "Word Smith",
-      description: "Highest total word count",
-      icon: <BookOpen className="w-5 h-5 text-secondary" />,
-      getValue: (p: Participant) => p.wordCount,
-      format: (val: number) => val.toLocaleString(),
-      metric: "words",
-      sort: (a: Participant, b: Participant) => b.wordCount - a.wordCount,
     },
     {
       title: "The Yap King/Queen",

@@ -98,9 +98,8 @@ export const Overview: React.FC<OverviewProps> = ({
       </div>
 
       {/* KPI Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
         <KpiTile label="Total Messages" value={formatNumber(stats.totalMessages)} />
-        <KpiTile label="Total Words" value={formatNumber(stats.totalWords)} />
         <KpiTile label="Active Days" value={stats.activeDays} />
         <KpiTile label="Msgs / Active Day" value={Math.round(stats.avgDailyMessages)} />
       </div>

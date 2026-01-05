@@ -21,6 +21,7 @@ export interface Participant {
   colorHint?: string;
   isSystem: boolean;
   isHidden?: boolean;
+  longestReplyTime?: number;
 }
 
 export type MessageType =
@@ -141,7 +142,7 @@ export const DEFAULT_CONFIG: ExportConfig = {
   },
   session: {
     gapThresholdMinutes: 90,
-    replyWindowMinutes: 240,
+    replyWindowMinutes: 20160,
   },
   textProcessing: {
     minMessageLength: 3,

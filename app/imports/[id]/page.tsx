@@ -264,6 +264,8 @@ export default function ImportDashboard() {
         const medianReplyTime =
           deltas.length === 0 ? 0 : deltas.length % 2 === 0 ? (deltas[mid - 1] + deltas[mid]) / 2 : deltas[mid];
 
+        const longestReplyTime = deltas.length > 0 ? deltas[deltas.length - 1] : 0;
+
         const secondsKeptWaiting = pEdges.reduce((acc, e) => acc + e.deltaSeconds, 0);
         const nightOwlCount = pMsgs.filter((m) => getTzMetadata(m.ts, timezone).hour < 5).length;
         const earlyBirdCount = pMsgs.filter((m) => {
@@ -287,6 +289,7 @@ export default function ImportDashboard() {
           earlyBirdCount,
           ghostCount,
           doubleTextCount,
+          longestReplyTime,
         };
       });
   }, [importId, importRecord]);

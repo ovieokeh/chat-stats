@@ -23,6 +23,7 @@ interface Participant {
   earlyBirdCount: number;
   ghostCount: number;
   doubleTextCount: number;
+  longestReplyTime: number;
 }
 
 interface ParticipantStatsProps {
@@ -181,14 +182,19 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                   </div>
                 </div>
 
-                <div className="mt-4 p-4 bg-error/5 rounded-2xl border border-error/10 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-error opacity-60" />
-                    <span className="text-xs font-bold opacity-60 uppercase tracking-wider">Total Time Waiting</span>
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div className="bg-error/5 p-4 rounded-2xl border border-error/10 flex flex-col items-center justify-center text-center">
+                    <span className="text-[10px] uppercase font-black opacity-40 mb-1 text-error">Total Waiting</span>
+                    <span className="text-lg font-bold text-error tabular-nums">
+                      {formatDurationHuman(p.secondsKeptWaiting)}
+                    </span>
                   </div>
-                  <span className="text-lg font-bold text-error tabular-nums">
-                    {formatDurationHuman(p.secondsKeptWaiting)}
-                  </span>
+                  <div className="bg-base-200/30 p-4 rounded-2xl border border-base-200 flex flex-col items-center justify-center text-center">
+                    <span className="text-[10px] uppercase font-black opacity-40 mb-1">Longest Reply</span>
+                    <span className="text-lg font-bold tabular-nums opacity-80">
+                      {formatDurationHuman(p.longestReplyTime)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
