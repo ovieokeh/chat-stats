@@ -10,6 +10,7 @@ import { FilterBar } from "../UI/FilterBar";
 import { Loader2, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useText } from "../../hooks/useText";
+import { Skeleton } from "../UI/Skeleton";
 
 interface MomentsFeedProps {
   importId: number;
@@ -79,8 +80,51 @@ export const MomentsFeed: React.FC<MomentsFeedProps> = ({ importId }) => {
 
   if (data === undefined) {
     return (
-      <div className="flex justify-center p-8">
-        <Loader2 className="animate-spin text-base-content/30" />
+      <div className="space-y-6 animate-pulse">
+        {/* FilterBar Skeleton */}
+        <div className="flex gap-2 border-b border-base-200/50 pb-4">
+          <Skeleton className="h-8 w-24 rounded-lg" />
+          <Skeleton className="h-8 w-24 rounded-lg" />
+        </div>
+
+        {/* Timeline Skeleton */}
+        <ul className="timeline timeline-vertical timeline-compact -ml-4 md:ml-0">
+          {[1, 2, 3].map((i) => (
+            <li key={i}>
+              {i > 1 && <hr className="bg-base-300" />}
+              <div className="timeline-start md:text-end mb-2 md:mb-0 pt-2 min-w-[80px]">
+                <Skeleton className="h-3 w-12 mb-1" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <div className="timeline-middle">
+                <div className="w-5 h-5 rounded-full bg-base-300" />
+              </div>
+              <div className="timeline-end mb-10 w-full pl-2 md:pl-0">
+                <div className="flex flex-wrap gap-3">
+                  {[1, 2].map((j) => (
+                    <div
+                      key={j}
+                      className="card bg-base-100 border border-base-300/60 rounded-2xl w-full md:w-80 h-32 p-4"
+                    >
+                      <div className="flex gap-3">
+                        <Skeleton className="w-8 h-8 rounded-full shrink-0" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-3 w-1/2" />
+                          <div className="pt-2 space-y-1">
+                            <Skeleton className="h-3 w-full" />
+                            <Skeleton className="h-3 w-full" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <hr className="bg-base-300" />
+            </li>
+          ))}
+        </ul>
       </div>
     );
   }

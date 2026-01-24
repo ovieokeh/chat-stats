@@ -29,7 +29,25 @@ interface OverviewProps {
   timelineData: Array<{ date: string; messages: number }>;
   hourlyData: Array<{ hour: number; count: number }>;
   heatmapData: Record<string, HeatmapBucket[][]>; // Changed from number[][]
-  participants?: Array<{ id: number; name: string }>; // Needed for dropdown
+  participants?: Array<{
+    id: number;
+    name: string;
+    msgCount: number;
+    wordCount: number;
+    yapIndex: number;
+    initiationRate: number;
+    medianReplyTime: number;
+    avgReplyTime: number;
+    secondsKeptWaiting: number;
+    nightOwlCount: number;
+    earlyBirdCount: number;
+    ghostCount: number;
+    doubleTextCount: number;
+    longestReplyTime: number;
+    messageShare: number;
+    carryScore: number;
+    leftOnReadCount: number;
+  }>;
   topics: { text: string; count: number }[];
   topicsLoading?: boolean;
   onTopicClick: (topic: string) => void;

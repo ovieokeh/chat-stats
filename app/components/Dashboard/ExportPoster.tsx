@@ -273,14 +273,132 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
         </div>
       )}
 
-      {/* Fallback for Leaderboard/Overview (Simplified for now to match style) */}
+      {/* Group Summary / Leaderboard View */}
       {type !== "persona" && (
-        <div className="flex-1 flex items-center justify-center p-16">
-          <div className="text-center">
-            <h1 className="text-8xl font-black tracking-tighter mb-8 whitespace-pre-line">
-              {type === "leaderboard" ? t("dashboard.export.general.rankings") : t("dashboard.export.general.wrapped")}
-            </h1>
-            <p className="text-2xl opacity-60 max-w-2xl mx-auto">{t("dashboard.export.general.hint")}</p>
+        <div className={`flex-1 flex flex-col ${isStories ? "p-12 md:p-16" : "p-10 md:p-14"} relative z-10`}>
+          {/* Top Bar */}
+          <div className={`flex justify-between items-start ${isStories ? "mb-16" : "mb-10"}`}>
+            <div>
+              <div className="font-mono opacity-40 text-sm tracking-widest uppercase mb-2">
+                {type === "leaderboard"
+                  ? t("dashboard.export.general.rankings")
+                  : t("dashboard.export.general.wrapped")}
+              </div>
+              <h1 className="text-5xl font-black tracking-tighter uppercase leading-none">
+                {data.chatName || t("navbar.defaultTitle")}
+              </h1>
+            </div>
+            <div className="text-right">
+              <div className="font-mono opacity-50 text-xl tracking-tighter font-bold">{new Date().getFullYear()}</div>
+              <div className="font-mono opacity-30 text-[10px] tracking-widest uppercase mt-1">
+                {t("dashboard.export.general.analyzer")}
+              </div>
+            </div>
+          </div>
+
+          <div className={`grid ${isStories ? "grid-cols-1 gap-12" : "grid-cols-2 gap-10"} flex-1`}>
+            {/* Left Col: Rankings */}
+            <div className="flex flex-col">
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] opacity-40 mb-6 border-b border-white/10 pb-2">
+                {t("dashboard.participantStats.table.title")}
+              </h2>
+              <div className="space-y-4">
+                {participants
+                  .sort((a, b) => b.msgCount - a.msgCount)
+                  .slice(0, 5)
+                  .map((p, i) => (
+                    <div key={p.id} className="flex items-center gap-4 group">
+                      <div className="font-black text-2xl opacity-20 w-8">{i + 1}</div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-baseline mb-1">
+                          <span className="font-bold text-xl tracking-tight uppercase truncate max-w-[180px]">
+                            {p.name}
+                          </span>
+                          <span className="font-mono text-sm opacity-60">{formatNumber(p.msgCount)}</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-current opacity-60 rounded-full"
+                            style={{
+                              width: `${(p.msgCount / (participants[0]?.msgCount || 1)) * 100}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+              {participants.length > 5 && (
+                <div className="mt-6 font-mono text-[10px] opacity-30 uppercase tracking-widest">
+                  + {participants.length - 5} {t("dashboard.participants").toLowerCase()}
+                </div>
+              )}
+            </div>
+
+            {/* Right Col: Stats & Topics */}
+            <div className="flex flex-col gap-10">
+              {/* Group Stats */}
+              <div className="space-y-8">
+                <div>
+                  <h2 className="text-xs font-black uppercase tracking-[0.2em] opacity-40 mb-4 border-b border-white/10 pb-2">
+                    {t("dashboard.export.general.stats")}
+                  </h2>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <div className="text-4xl font-black tracking-tighter leading-none mb-1">
+                        {formatNumber(data.stats?.totalMessages || 0)}
+                      </div>
+                      <div className="text-[10px] font-bold opacity-40 uppercase tracking-wider">
+                        {t("dashboard.hero.totalTitle")}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-4xl font-black tracking-tighter leading-none mb-1">
+                        {formatNumber(data.stats?.activeDays || 0)}
+                      </div>
+                      <div className="text-[10px] font-bold opacity-40 uppercase tracking-wider">
+                        {t("dashboard.hero.dailyTitle").split(" ")[0]} Days
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hot Topics */}
+                {data.topics && data.topics.length > 0 && (
+                  <div>
+                    <h2 className="text-xs font-black uppercase tracking-[0.2em] opacity-40 mb-4 border-b border-white/10 pb-2">
+                      {t("overview.topics.title")}
+                    </h2>
+                    <div className="flex flex-wrap gap-2">
+                      {data.topics.slice(0, 8).map((topic, i) => (
+                        <span
+                          key={i}
+                          className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-bold uppercase tracking-tight opacity-70"
+                        >
+                          #{topic.text}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Visualization Placeholder / Quote */}
+              <div className="mt-auto p-6 rounded-[2rem] bg-white/5 border border-white/10 italic opacity-40 text-sm leading-relaxed">
+                "{t("dashboard.shareModal.subtitle")}"
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div
+            className={`${isStories ? "mt-16" : "mt-10"} flex justify-between items-end opacity-40 border-t border-white/10 pt-6`}
+          >
+            <div className="text-xs font-bold tracking-widest uppercase">{t("dashboard.export.general.analyzer")}</div>
+            <div className="text-[10px] font-mono uppercase tracking-widest">
+              {t("dashboard.export.general.generatedLocally")}
+            </div>
           </div>
         </div>
       )}

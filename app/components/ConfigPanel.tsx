@@ -42,130 +42,134 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onSave, onRese
   };
 
   return (
-    <div className="card bg-base-100 border border-base-300/60 shadow-sm">
-      <div className="card-body p-6">
-        <h3 className="card-title text-lg mb-4">{t("configPanel.title")}</h3>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-lg font-bold">{t("configPanel.title")}</h3>
+        <button className="btn btn-ghost btn-sm sm:hidden" onClick={onReset} disabled={!isDirty}>
+          <RotateCcw className="w-4 h-4" />
+        </button>
+      </div>
 
-        {/* Parsing Settings */}
-        <div className="space-y-4">
-          <h4 className="text-sm font-semibold uppercase tracking-wide opacity-50">{t("configPanel.parsing.title")}</h4>
+      {/* Parsing Settings */}
+      <div className="space-y-4">
+        <h4 className="text-xs font-bold uppercase tracking-wider opacity-40">{t("configPanel.parsing.title")}</h4>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">{t("configPanel.parsing.dateFormat.label")}</span>
-              </label>
-              <select
-                className="select select-bordered w-full"
-                value={localConfig.parsing.dateFormat}
-                onChange={(e) => handleChange("parsing", "dateFormat", e.target.value)}
-              >
-                <option value="DD/MM/YYYY">{t("configPanel.parsing.dateFormat.euro")}</option>
-                <option value="MM/DD/YYYY">{t("configPanel.parsing.dateFormat.us")}</option>
-              </select>
-            </div>
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">{t("configPanel.parsing.timezone.label")}</span>
-              </label>
-              <select
-                className="select select-bordered w-full"
-                value={localConfig.parsing.timezone}
-                onChange={(e) => handleChange("parsing", "timezone", e.target.value)}
-              >
-                {/* Common timezones or all supported */}
-                {["UTC", ...Intl.supportedValuesOf("timeZone").filter((tz) => tz.includes("/"))].map((tz) => (
-                  <option key={tz} value={tz}>
-                    {tz}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="form-control bg-base-200/50 p-4 rounded-xl">
-            <label className="label cursor-pointer justify-start gap-4">
-              <input
-                type="checkbox"
-                className="toggle toggle-primary"
-                checked={!localConfig.parsing.strictMode}
-                onChange={(e) => handleChange("parsing", "strictMode", !e.target.checked)}
-              />
-              <div>
-                <span className="label-text font-medium">{t("configPanel.parsing.strictMode.label")}</span>
-                <p className="text-xs opacity-60 mt-0.5">{t("configPanel.parsing.strictMode.description")}</p>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text font-medium">{t("configPanel.parsing.dateFormat.label")}</span>
             </label>
+            <select
+              className="select select-bordered w-full rounded-xl bg-base-200/50 border-none"
+              value={localConfig.parsing.dateFormat}
+              onChange={(e) => handleChange("parsing", "dateFormat", e.target.value)}
+            >
+              <option value="DD/MM/YYYY">{t("configPanel.parsing.dateFormat.euro")}</option>
+              <option value="MM/DD/YYYY">{t("configPanel.parsing.dateFormat.us")}</option>
+            </select>
           </div>
-        </div>
-
-        <div className="divider my-4"></div>
-
-        {/* Session Logic */}
-        <div className="space-y-5">
-          <h4 className="text-sm font-semibold uppercase tracking-wide opacity-50">{t("configPanel.session.title")}</h4>
-
           <div className="form-control">
-            <div className="flex justify-between items-center mb-2">
-              <label className="label-text font-medium">{t("configPanel.session.gapThreshold.label")}</label>
-              <span className="badge badge-primary badge-outline font-mono">
-                {formatDuration(localConfig.session.gapThresholdMinutes)}
-              </span>
-            </div>
-            <input
-              type="range"
-              min="15"
-              max="480"
-              step="15"
-              className="w-full range range-primary range-sm"
-              value={localConfig.session.gapThresholdMinutes}
-              onChange={(e) => handleChange("session", "gapThresholdMinutes", parseInt(e.target.value))}
-            />
-            <div className="flex justify-between text-[10px] opacity-50 mt-1 px-1">
-              <span>{t("configPanel.session.gapThreshold.markers.15m")}</span>
-              <span>{t("configPanel.session.gapThreshold.markers.2h")}</span>
-              <span>{t("configPanel.session.gapThreshold.markers.4h")}</span>
-              <span>{t("configPanel.session.gapThreshold.markers.8h")}</span>
-            </div>
-            <p className="text-xs opacity-60 mt-2">{t("configPanel.session.gapThreshold.description")}</p>
-          </div>
-
-          <div className="form-control">
-            <div className="flex justify-between items-center mb-2">
-              <label className="label-text font-medium">{t("configPanel.session.replyWindow.label")}</label>
-              <span className="badge badge-primary badge-outline font-mono">
-                {formatDuration(localConfig.session.replyWindowMinutes)}
-              </span>
-            </div>
-            <input
-              type="range"
-              min="5"
-              max="120"
-              step="5"
-              className="w-full range range-primary range-sm"
-              value={localConfig.session.replyWindowMinutes}
-              onChange={(e) => handleChange("session", "replyWindowMinutes", parseInt(e.target.value))}
-            />
-            <div className="flex justify-between text-[10px] opacity-50 mt-1 px-1">
-              <span>{t("configPanel.session.replyWindow.markers.5m")}</span>
-              <span>{t("configPanel.session.replyWindow.markers.30m")}</span>
-              <span>{t("configPanel.session.replyWindow.markers.1h")}</span>
-              <span>{t("configPanel.session.replyWindow.markers.2h")}</span>
-            </div>
-            <p className="text-xs opacity-60 mt-2">{t("configPanel.session.replyWindow.description")}</p>
+            <label className="label">
+              <span className="label-text font-medium">{t("configPanel.parsing.timezone.label")}</span>
+            </label>
+            <select
+              className="select select-bordered w-full rounded-xl bg-base-200/50 border-none"
+              value={localConfig.parsing.timezone}
+              onChange={(e) => handleChange("parsing", "timezone", e.target.value)}
+            >
+              {["UTC", ...Intl.supportedValuesOf("timeZone").filter((tz) => tz.includes("/"))].map((tz) => (
+                <option key={tz} value={tz}>
+                  {tz}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
-        <div className="divider my-4"></div>
-
-        <div className="flex justify-end gap-3">
-          <button className="btn btn-ghost" onClick={onReset} disabled={!isDirty}>
-            <RotateCcw className="w-4 h-4" /> {t("configPanel.actions.reset")}
-          </button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={!isDirty}>
-            <Save className="w-4 h-4" /> {t("configPanel.actions.saveAndRecompute")}
-          </button>
+        <div className="form-control bg-base-200/30 p-4 rounded-2xl border border-base-200/50">
+          <label className="label cursor-pointer justify-start gap-4 p-0">
+            <input
+              type="checkbox"
+              className="toggle toggle-primary toggle-sm"
+              checked={!localConfig.parsing.strictMode}
+              onChange={(e) => handleChange("parsing", "strictMode", !e.target.checked)}
+            />
+            <div>
+              <span className="label-text font-bold">{t("configPanel.parsing.strictMode.label")}</span>
+              <p className="text-[11px] opacity-60 mt-0.5">{t("configPanel.parsing.strictMode.description")}</p>
+            </div>
+          </label>
         </div>
+      </div>
+
+      <div className="divider opacity-30"></div>
+
+      {/* Session Logic */}
+      <div className="space-y-6">
+        <h4 className="text-xs font-bold uppercase tracking-wider opacity-40">{t("configPanel.session.title")}</h4>
+
+        <div className="form-control">
+          <div className="flex justify-between items-center mb-4">
+            <label className="label-text font-bold">{t("configPanel.session.gapThreshold.label")}</label>
+            <span className="badge badge-primary badge-outline font-mono text-xs">
+              {formatDuration(localConfig.session.gapThresholdMinutes)}
+            </span>
+          </div>
+          <input
+            type="range"
+            min="15"
+            max="480"
+            step="15"
+            className="w-full range range-primary range-xs"
+            value={localConfig.session.gapThresholdMinutes}
+            onChange={(e) => handleChange("session", "gapThresholdMinutes", parseInt(e.target.value))}
+          />
+          <div className="flex justify-between text-[10px] opacity-40 mt-2 px-1 font-medium">
+            <span>15m</span>
+            <span>2h</span>
+            <span>4h</span>
+            <span>8h</span>
+          </div>
+          <p className="text-[11px] opacity-50 mt-3 italic">{t("configPanel.session.gapThreshold.description")}</p>
+        </div>
+
+        <div className="form-control">
+          <div className="flex justify-between items-center mb-4">
+            <label className="label-text font-bold">{t("configPanel.session.replyWindow.label")}</label>
+            <span className="badge badge-primary badge-outline font-mono text-xs">
+              {formatDuration(localConfig.session.replyWindowMinutes)}
+            </span>
+          </div>
+          <input
+            type="range"
+            min="5"
+            max="120"
+            step="5"
+            className="w-full range range-primary range-xs"
+            value={localConfig.session.replyWindowMinutes}
+            onChange={(e) => handleChange("session", "replyWindowMinutes", parseInt(e.target.value))}
+          />
+          <div className="flex justify-between text-[10px] opacity-40 mt-2 px-1 font-medium">
+            <span>5m</span>
+            <span>30m</span>
+            <span>1h</span>
+            <span>2h</span>
+          </div>
+          <p className="text-[11px] opacity-50 mt-3 italic">{t("configPanel.session.replyWindow.description")}</p>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-3 pt-4 sticky bottom-0 bg-base-100 py-4 -mx-6 px-6 border-t border-base-200/50 mt-8">
+        <button className="btn btn-ghost btn-sm hidden sm:flex" onClick={onReset} disabled={!isDirty}>
+          <RotateCcw className="w-4 h-4" /> {t("configPanel.actions.reset")}
+        </button>
+        <button
+          className="btn btn-primary btn-sm flex-1 sm:flex-none rounded-xl"
+          onClick={handleSave}
+          disabled={!isDirty}
+        >
+          <Save className="w-4 h-4" /> {t("configPanel.actions.saveAndRecompute")}
+        </button>
       </div>
     </div>
   );

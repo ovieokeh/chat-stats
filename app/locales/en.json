@@ -10,6 +10,15 @@
     "unknown": "Unknown",
     "type": "Type",
     "duration": {
+      "days": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      },
       "min": "min",
       "hour": "hour",
       "hours": "hours",
@@ -174,7 +183,8 @@
         "rankings": "THE\nRANKINGS",
         "wrapped": "CHAT\nWRAPPED",
         "placeholder": "Add participants to generate personas",
-        "hint": "Select a specific persona to generate a character card."
+        "hint": "Select a specific persona to generate a character card.",
+        "stats": "GROUP STATS"
       }
     }
   },

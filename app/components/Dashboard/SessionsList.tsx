@@ -143,7 +143,7 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
                     </div>
 
                     {/* Stats Horizontal */}
-                    <div className="flex-1 flex items-center gap-6 justify-end mr-4">
+                    <div className="flex-1 flex items-center gap-6 justify-end">
                       <div className="text-right">
                         <p className="text-[9px] opacity-30 uppercase font-black tracking-tighter mb-0.5">
                           {t("sessions.duration")}
@@ -156,7 +156,7 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
                         </p>
                         <p className="text-xs font-mono font-bold leading-none">{session.messageCount}</p>
                       </div>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                      <div className="md:opacity-0 group-hover:opacity-100 transition-opacity ml-2">
                         <ArrowRight className="w-3.5 h-3.5 text-primary" />
                       </div>
                     </div>

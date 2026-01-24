@@ -332,7 +332,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6 }}
-        className="w-full bg-base-100/50 border border-base-200 rounded-[2.5rem] p-6 lg:p-10 relative overflow-hidden"
+        className="w-full bg-base-100/50 border border-base-200 rounded-[2.5rem] py-6 md:p-6 lg:p-10 relative overflow-hidden"
       >
         {/* Background Decoration */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
