@@ -10,6 +10,14 @@ interface HeatmapProps {
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
+// Format hour as time label (12a, 1a, 2a... 11a, 12p, 1p... 11p)
+const formatHourLabel = (h: number): string => {
+  if (h === 0) return "12a";
+  if (h < 12) return `${h}a`;
+  if (h === 12) return "12p";
+  return `${h - 12}p`;
+};
+
 export const Heatmap: React.FC<HeatmapProps> = ({ data, metricType = "volume" }) => {
   // Find max (and min for speed) for scaling
   let max = 0;
@@ -19,7 +27,7 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, metricType = "volume" })
     row.forEach((cell) => {
       max = Math.max(max, cell.value);
       if (cell.value > 0) min = Math.min(min, cell.value);
-    })
+    }),
   );
 
   if (min === Infinity) min = 0;
@@ -68,7 +76,7 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, metricType = "volume" })
           <div className="w-8 shrink-0"></div>
           {HOURS.map((h) => (
             <div key={h} className="flex-1 text-center opacity-50 text-[10px]">
-              {h}
+              {formatHourLabel(h)}
             </div>
           ))}
         </div>
@@ -83,7 +91,7 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, metricType = "volume" })
                 <div
                   key={h}
                   className={`flex-1 h-full mx-[1px] rounded-sm transition-all hover:ring-2 hover:ring-base-content/20 relative group ${getColor(
-                    cell.value
+                    cell.value,
                   )}`}
                 >
                   {/* Tooltip */}

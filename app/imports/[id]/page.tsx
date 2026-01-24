@@ -12,14 +12,14 @@ import { SessionsList } from "../../components/Dashboard/SessionsList";
 import { MomentsFeed } from "../../components/Dashboard/MomentsFeed";
 import { Leaderboard } from "../../components/Dashboard/Leaderboard";
 import { format } from "date-fns";
-import { Loader2, X, Eye, EyeOff, Users } from "lucide-react";
-import { ConfigPanel } from "../../components/ConfigPanel";
+import { Loader2, Users } from "lucide-react";
 import { ExportConfig } from "../../types";
 import { Navbar } from "../../components/Dashboard/Navbar";
+import { AnalysisConfigModal } from "../../components/Dashboard/AnalysisConfigModal";
+import { ParticipantVisibilityModal } from "../../components/Dashboard/ParticipantVisibilityModal";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { extractTopics, getTzMetadata } from "../../lib/analysis";
-import { Participant } from "../../types";
 
 const COMMON_BOTS = ["Meta AI", "WhatsApp"];
 
@@ -29,7 +29,8 @@ export default function ImportDashboard() {
   const router = useRouter();
 
   const importId = parseInt(Array.isArray(params.id) ? params.id[0] : params.id);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isVisibilityOpen, setIsVisibilityOpen] = useState(false);
 
   // Tab state synced with URL
   const tabParam = searchParams.get("tab");
@@ -60,7 +61,7 @@ export default function ImportDashboard() {
       const { recomputeImportAnalysis } = await import("../../lib/recompute");
       await recomputeImportAnalysis(importId);
 
-      setIsSettingsOpen(false);
+      setIsConfigOpen(false);
     } catch (e) {
       console.error("Failed to recompute", e);
       alert("Error saving settings");
@@ -329,7 +330,7 @@ export default function ImportDashboard() {
       <Navbar
         filename={importRecord.filename}
         importedAt={importRecord.importedAt}
-        onSettingsClick={() => setIsSettingsOpen(true)}
+        onSettingsClick={() => setIsConfigOpen(true)}
       />
 
       <main className="flex-1 overflow-y-auto w-full max-w-6xl mx-auto px-4 md:px-6 py-6 pb-20">
@@ -354,7 +355,7 @@ export default function ImportDashboard() {
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-semibold">Participants</h2>
                     <button
-                      onClick={() => setIsSettingsOpen(true)}
+                      onClick={() => setIsVisibilityOpen(true)}
                       className="text-xs btn btn-ghost btn-xs gap-1 opacity-50 hover:opacity-100"
                     >
                       <Users className="w-3 h-3" /> Manage
@@ -407,54 +408,20 @@ export default function ImportDashboard() {
         </div>
       </main>
 
-      <dialog id="settings_modal" className="modal modal-bottom sm:modal-middle" open={isSettingsOpen}>
-        <div className="modal-box p-0 max-w-2xl bg-base-100">
-          <button
-            className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-            onClick={() => setIsSettingsOpen(false)}
-          >
-            ✕
-          </button>
-          <div className="p-6">
-            <h3 className="font-bold text-lg mb-4">Dashboard Settings</h3>
-            {importRecord?.configJson && (
-              <ConfigPanel config={JSON.parse(importRecord.configJson)} onSave={handleConfigSave} onReset={() => {}} />
-            )}
-            {isRecomputing && (
-              <div className="absolute inset-0 bg-base-100/80 flex items-center justify-center z-10 rounded-xl">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              </div>
-            )}
-            <div className="divider my-6">Danger Zone</div>
-            <div className="bg-error/10 border border-error/20 p-4 rounded-xl flex items-center justify-between">
-              <div>
-                <h4 className="font-bold text-error">Destroy All Data</h4>
-                <p className="text-sm opacity-70">Delete all analysis from this device.</p>
-              </div>
-              <button className="btn btn-error btn-outline btn-sm" onClick={handleDeleteAllData}>
-                Delete
-              </button>
-            </div>
-            <div className="divider my-6">Participant Visibility</div>
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              {allParticipants
-                ?.filter((p) => !p.isSystem)
-                .map((p) => (
-                  <div key={p.id} className="flex items-center justify-between p-3 bg-base-200/50 rounded-xl">
-                    <span className={`text-sm font-semibold ${p.isHidden ? "opacity-40" : ""}`}>{p.displayName}</span>
-                    <button
-                      className="btn btn-xs btn-ghost text-primary"
-                      onClick={async () => await db.participants.update(p.id!, { isHidden: !p.isHidden })}
-                    >
-                      {p.isHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                      {p.isHidden ? "Show" : "Hide"}
-                    </button>
-                  </div>
-                ))}
-            </div>
-          </div>
-        </div>
-      </dialog>
+      <AnalysisConfigModal
+        isOpen={isConfigOpen}
+        onClose={() => setIsConfigOpen(false)}
+        config={importRecord?.configJson ? JSON.parse(importRecord.configJson) : null}
+        onSave={handleConfigSave}
+        isRecomputing={isRecomputing}
+        onDeleteAllData={handleDeleteAllData}
+      />
+
+      <ParticipantVisibilityModal
+        isOpen={isVisibilityOpen}
+        onClose={() => setIsVisibilityOpen(false)}
+        participants={allParticipants}
+      />
     </div>
   );
 }

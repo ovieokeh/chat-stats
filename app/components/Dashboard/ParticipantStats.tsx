@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MessageSquare, Zap, UserPlus, EyeOff, Ghost } from "lucide-react";
+import { MessageSquare, Zap, UserPlus, EyeOff, Ghost, Clock, HelpCircle } from "lucide-react";
 import { formatDurationHuman } from "../../lib/format";
 import { Skeleton } from "../UI/Skeleton";
 import { usePrivacy } from "../../context/PrivacyContext";
@@ -9,6 +9,17 @@ import { obfuscateName } from "../../lib/utils";
 import { Crown, FastForward, Copy, TrendingUp } from "lucide-react";
 import { db } from "../../lib/db";
 import { motion } from "framer-motion";
+
+// Tooltip component for explaining metrics
+const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, children }) => (
+  <div className="relative group/tooltip inline-flex items-center">
+    {children}
+    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tooltip:block bg-neutral text-neutral-content text-[10px] px-2 py-1.5 rounded-lg whitespace-nowrap z-20 shadow-lg max-w-[200px] text-center leading-snug">
+      {text}
+      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-neutral" />
+    </div>
+  </div>
+);
 
 interface Participant {
   id: number;
@@ -204,51 +215,73 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                     <span className="text-xs font-bold uppercase opacity-60">Messages</span>
                   </div>
                   <span className="text-2xl font-black tabular-nums">{p.msgCount.toLocaleString()}</span>
+                  <p className="text-[10px] opacity-40 mt-1">{p.wordCount.toLocaleString()} words</p>
                 </div>
                 <div className="flex-1 bg-base-200/50 rounded-2xl p-4 text-center">
-                  <div className="flex items-center justify-center gap-2 text-secondary mb-1">
-                    <Zap size={16} />
-                    <span className="text-xs font-bold uppercase opacity-60">Yap Index</span>
-                  </div>
+                  <Tooltip text="Words per message — higher means longer messages">
+                    <div className="flex items-center justify-center gap-2 text-secondary mb-1">
+                      <Zap size={16} />
+                      <span className="text-xs font-bold uppercase opacity-60">Words/Msg</span>
+                      <HelpCircle size={10} className="opacity-40" />
+                    </div>
+                  </Tooltip>
                   <span className="text-2xl font-black tabular-nums">{p.yapIndex.toFixed(1)}</span>
+                  <p className="text-[10px] opacity-40 mt-1">
+                    {p.yapIndex > 10 ? "Long-winded" : p.yapIndex > 5 ? "Detailed" : "Brief"}
+                  </p>
                 </div>
               </div>
 
               {/* Secondary Stats Row */}
               <div className="flex gap-3">
                 <div className="flex-1 bg-info/10 rounded-2xl p-4 text-center">
-                  <span className="text-[10px] font-bold uppercase opacity-50 block mb-1">Starts Convos</span>
+                  <Tooltip text="How often this person starts new conversations">
+                    <span className="text-[10px] font-bold uppercase opacity-50 block mb-1 inline-flex items-center gap-1">
+                      Starts Convos <HelpCircle size={8} className="opacity-40" />
+                    </span>
+                  </Tooltip>
                   <span className="text-xl font-black text-info">{p.initiationRate.toFixed(0)}%</span>
                 </div>
                 <div className="flex-1 bg-success/10 rounded-2xl p-4 text-center">
-                  <span className="text-[10px] font-bold uppercase opacity-50 block mb-1">Reply Speed</span>
+                  <Tooltip text="Typical time to respond (median)">
+                    <span className="text-[10px] font-bold uppercase opacity-50 block mb-1 inline-flex items-center gap-1">
+                      Reply Speed <HelpCircle size={8} className="opacity-40" />
+                    </span>
+                  </Tooltip>
                   <span className="text-xl font-black text-success">{formatDurationHuman(p.medianReplyTime)}</span>
+                  {p.longestReplyTime > 0 && (
+                    <p className="text-[10px] opacity-40 mt-1">Longest: {formatDurationHuman(p.longestReplyTime)}</p>
+                  )}
                 </div>
               </div>
 
               {/* Drama Stats Row */}
               <div className="flex gap-3">
                 {/* Left on Read */}
-                <div className="flex-1 bg-warning/10 border border-warning/10 rounded-2xl p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center text-xl">
-                    👻
+                <Tooltip text="Times they didn't reply and the conversation died">
+                  <div className="flex-1 bg-warning/10 border border-warning/10 rounded-2xl p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center text-xl">
+                      👻
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase opacity-50 block">Left on Read</span>
+                      <span className="text-lg font-black text-warning">{p.leftOnReadCount}x</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase opacity-50 block">Left you on Read</span>
-                    <span className="text-lg font-black text-warning">{p.leftOnReadCount}x</span>
-                  </div>
-                </div>
+                </Tooltip>
 
                 {/* Ghost Count */}
-                <div className="flex-1 bg-base-200/50 border border-base-200 rounded-2xl p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-600/20 flex items-center justify-center">
-                    <Ghost size={18} className="text-slate-500" />
+                <Tooltip text="Replies that took over 12 hours">
+                  <div className="flex-1 bg-base-200/50 border border-base-200 rounded-2xl p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-600/20 flex items-center justify-center">
+                      <Ghost size={18} className="text-slate-500" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase opacity-50 block">Ghosted (12h+)</span>
+                      <span className="text-lg font-black">{p.ghostCount}x</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase opacity-50 block">Ghosted (12h+)</span>
-                    <span className="text-lg font-black">{p.ghostCount}x</span>
-                  </div>
-                </div>
+                </Tooltip>
               </div>
             </div>
           </motion.div>
