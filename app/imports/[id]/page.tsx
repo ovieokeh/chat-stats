@@ -20,6 +20,7 @@ import { ParticipantVisibilityModal } from "../../components/Dashboard/Participa
 import { useRouter, useSearchParams } from "next/navigation";
 import { extractTopics, getTzMetadata } from "../../lib/analysis";
 import { PageLayout } from "../../components/Layout/PageLayout";
+import { useText } from "../../hooks/useText";
 
 const COMMON_BOTS = ["Meta AI", "WhatsApp"];
 
@@ -27,6 +28,7 @@ export default function ImportDashboard() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { t } = useText();
 
   const importId = parseInt(Array.isArray(params.id) ? params.id[0] : params.id);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -59,22 +61,23 @@ export default function ImportDashboard() {
       await recomputeImportAnalysis(importId);
 
       setIsConfigOpen(false);
+      setIsConfigOpen(false);
     } catch (e) {
       console.error("Failed to recompute", e);
-      alert("Error saving settings");
+      alert(t("common.errorSaving"));
     } finally {
       setIsRecomputing(false);
     }
   };
 
   const handleDeleteAllData = async () => {
-    if (confirm("Are you sure you want to permanently delete ALL imported data? This cannot be undone.")) {
+    if (confirm(t("deleteConfirm"))) {
       try {
         await clearDatabase();
         router.push("/");
       } catch (e) {
         console.error("Failed to delete data", e);
-        alert("Error deleting data");
+        alert(t("common.errorDeleting"));
       }
     }
   };
@@ -337,14 +340,14 @@ export default function ImportDashboard() {
       >
         <div className="flex flex-col gap-6 pb-20">
           <div role="tablist" className="tabs tabs-boxed bg-base-200/50 p-1 inline-block w-fit">
-            {["overview", "moments", "sessions", "history"].map((t) => (
+            {["overview", "moments", "sessions", "history"].map((tabKey) => (
               <a
-                key={t}
+                key={tabKey}
                 role="tab"
-                className={`tab ${activeTab === t ? "tab-active bg-base-100 shadow-sm" : ""}`}
-                onClick={() => setActiveTab(t)}
+                className={`tab ${activeTab === tabKey ? "tab-active bg-base-100 shadow-sm" : ""}`}
+                onClick={() => setActiveTab(tabKey)}
               >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
+                {t(`tabs.${tabKey}`)}
               </a>
             ))}
           </div>
@@ -354,12 +357,12 @@ export default function ImportDashboard() {
               <section className="animate-in fade-in duration-300">
                 <div className="mb-8">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold">Participants</h2>
+                    <h2 className="text-xl font-semibold">{t("dashboard.participants")}</h2>
                     <button
                       onClick={() => setIsVisibilityOpen(true)}
                       className="text-xs btn btn-ghost btn-xs gap-1 opacity-50 hover:opacity-100"
                     >
-                      <Users className="w-3 h-3" /> Manage
+                      <Users className="w-3 h-3" /> {t("manage")}
                     </button>
                   </div>
                   <ParticipantStats participants={participantsData || []} />

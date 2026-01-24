@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toPng } from "html-to-image";
 import { ExportPoster, ExportPlatform, ExportType } from "./ExportPoster";
+import { useText } from "../../hooks/useText";
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ interface ShareModalProps {
 }
 
 export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, type: initialType, data }) => {
+  const { t } = useText();
   const [platform, setPlatform] = useState<ExportPlatform>("stories");
   const [activeTab, setActiveTab] = useState<"persona" | "summary">("persona");
   const [insightId, setInsightId] = useState<string>("volume");
@@ -35,12 +37,42 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, type: i
   const [isDone, setIsDone] = useState(false);
 
   const personas = [
-    { id: "volume", label: "Protagonist", icon: <Award className="w-4 h-4" />, description: "Most Active" },
-    { id: "yap", label: "Yap King", icon: <Share2 className="w-4 h-4" />, description: "Longest Messages" },
-    { id: "speed", label: "Speedster", icon: <Zap className="w-4 h-4" />, description: "Fastest Replier" },
-    { id: "night", label: "Vampire", icon: <Moon className="w-4 h-4" />, description: "Night Owl" },
-    { id: "ghost", label: "Ghost", icon: <Ghost className="w-4 h-4" />, description: "Rarely Seen" },
-    { id: "double", label: "Double Texter", icon: <MessageSquare className="w-4 h-4" />, description: "No Replies" },
+    {
+      id: "volume",
+      label: t("dashboard.participantStats.badges.volume.label"),
+      icon: <Award className="w-4 h-4" />,
+      description: t("dashboard.participantStats.badges.volume.description"),
+    },
+    {
+      id: "yap",
+      label: t("dashboard.participantStats.badges.yap.label"),
+      icon: <Share2 className="w-4 h-4" />,
+      description: t("dashboard.participantStats.badges.yap.description"),
+    },
+    {
+      id: "speed",
+      label: t("dashboard.participantStats.badges.speed.label"),
+      icon: <Zap className="w-4 h-4" />,
+      description: t("dashboard.participantStats.badges.speed.description"),
+    },
+    {
+      id: "night",
+      label: t("dashboard.participantStats.badges.nightOwl.label"),
+      icon: <Moon className="w-4 h-4" />,
+      description: t("dashboard.participantStats.badges.nightOwl.description"),
+    },
+    {
+      id: "ghost",
+      label: t("dashboard.participantStats.badges.ghost.label"),
+      icon: <Ghost className="w-4 h-4" />,
+      description: t("dashboard.participantStats.badges.ghost.description"),
+    },
+    {
+      id: "double",
+      label: t("dashboard.participantStats.badges.doubleText.label"),
+      icon: <MessageSquare className="w-4 h-4" />,
+      description: t("dashboard.participantStats.badges.doubleText.description"),
+    },
   ];
 
   const handleDownload = async () => {
@@ -89,7 +121,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, type: i
       <div className="relative w-full max-w-6xl bg-base-100 border border-base-200 shadow-2xl rounded-[3rem] overflow-hidden flex flex-col md:flex-row animate-in zoom-in-95 duration-300 h-[85vh]">
         {/* Left: Preview Area */}
         <div className="md:w-7/12 bg-base-200/50 p-6 flex flex-col items-center justify-center relative min-h-[500px] overflow-hidden">
-          <div className="text-xs font-bold opacity-30 uppercase tracking-[0.2em] mb-4">Live Preview</div>
+          <div className="text-xs font-bold opacity-30 uppercase tracking-[0.2em] mb-4">
+            {t("dashboard.shareModal.preview.label")}
+          </div>
 
           <div
             className="relative shadow-2xl transition-all duration-300 origin-center"
@@ -110,7 +144,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, type: i
           </div>
 
           <p className="text-[10px] opacity-40 absolute bottom-6 text-center px-12">
-            captured at {platform === "stories" ? "1080x1920" : "1080x1080"} • local-first generation
+            {t("dashboard.shareModal.preview.disclaimer", {
+              resolution: platform === "stories" ? "1080x1920" : "1080x1080",
+            })}
           </p>
         </div>
 
@@ -121,8 +157,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, type: i
           </button>
 
           <div className="mb-6">
-            <h2 className="text-3xl font-black tracking-tight mb-1">Cast of Characters</h2>
-            <p className="opacity-50 text-sm">Tell the story of your group chat.</p>
+            <h2 className="text-3xl font-black tracking-tight mb-1">{t("dashboard.shareModal.title")}</h2>
+            <p className="opacity-50 text-sm">{t("dashboard.shareModal.subtitle")}</p>
           </div>
 
           {/* Type Toggle */}
@@ -135,7 +171,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, type: i
               }`}
               onClick={() => setActiveTab("persona")}
             >
-              Personas
+              {t("dashboard.shareModal.tabs.personas")}
             </button>
             <button
               className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all ${
@@ -145,14 +181,16 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, type: i
               }`}
               onClick={() => setActiveTab("summary")}
             >
-              Summary
+              {t("dashboard.shareModal.tabs.summary")}
             </button>
           </div>
 
           <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-6">
             {activeTab === "persona" && (
               <div className="space-y-4">
-                <label className="text-xs font-bold uppercase tracking-wider opacity-60">Choose a Character</label>
+                <label className="text-xs font-bold uppercase tracking-wider opacity-60">
+                  {t("dashboard.shareModal.selection")}
+                </label>
                 <div className="grid grid-cols-1 gap-3">
                   {personas.map((persona) => (
                     <button
@@ -187,13 +225,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, type: i
             {activeTab === "summary" && (
               <div className="text-center py-10 opacity-60 bg-base-200/50 rounded-3xl border border-dashed border-base-300">
                 <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="font-bold">Summary View</p>
-                <p className="text-sm">Standard leaderboard and stats</p>
+                <p className="font-bold">{t("dashboard.shareModal.summaryView.title")}</p>
+                <p className="text-sm">{t("dashboard.shareModal.summaryView.description")}</p>
               </div>
             )}
 
             <div className="space-y-4">
-              <label className="text-xs font-bold uppercase tracking-wider opacity-60">Format</label>
+              <label className="text-xs font-bold uppercase tracking-wider opacity-60">
+                {t("dashboard.shareModal.format.label")}
+              </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setPlatform("stories")}
@@ -204,7 +244,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, type: i
                   }`}
                 >
                   <Smartphone className="w-5 h-5" />
-                  <span className="text-xs font-bold">Story (9:16)</span>
+                  <span className="text-xs font-bold">{t("dashboard.shareModal.format.story")}</span>
                 </button>
                 <button
                   onClick={() => setPlatform("feed")}
@@ -215,7 +255,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, type: i
                   }`}
                 >
                   <Layout className="w-5 h-5" />
-                  <span className="text-xs font-bold">Square (1:1)</span>
+                  <span className="text-xs font-bold">{t("dashboard.shareModal.format.square")}</span>
                 </button>
               </div>
             </div>
@@ -232,17 +272,17 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, type: i
               {isGenerating ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Drawing Card...
+                  {t("dashboard.shareModal.actions.generating")}
                 </>
               ) : isDone ? (
                 <>
                   <CheckCircle2 className="w-5 h-5" />
-                  Saved to Device
+                  {t("dashboard.shareModal.actions.saved")}
                 </>
               ) : (
                 <>
                   <Download className="w-5 h-5" />
-                  Download Poster
+                  {t("dashboard.shareModal.actions.download")}
                 </>
               )}
             </button>

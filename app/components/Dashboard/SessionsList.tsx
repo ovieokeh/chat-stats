@@ -10,6 +10,7 @@ import { ArrowRight, Clock } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getAvatarColor } from "../../lib/colors";
 import { Skeleton } from "../UI/Skeleton";
+import { useText } from "../../hooks/useText";
 
 interface SessionsListProps {
   importId: number;
@@ -21,6 +22,7 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [page, setPage] = useState(0);
+  const { t } = useText();
 
   // Fetch participants for name resolution
   const participants = useLiveQuery(() => db.participants.where("importId").equals(importId).toArray(), [importId]);
@@ -96,9 +98,9 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold flex items-center gap-2">
           <Clock className="w-5 h-5 text-primary" />
-          Sessions Explorer
+          {t("sessions.title")}
           <span className="badge badge-sm badge-neutral text-[10px] font-mono opacity-70 uppercase tracking-widest">
-            {sessions.count} total
+            {t("sessions.total", { count: sessions.count })}
           </span>
         </h3>
       </div>
@@ -116,7 +118,9 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
               {group.sessions.map((session) => {
                 const startTime = format(session.startTs, "h:mm a");
                 const duration = formatDurationSimple((session.endTs - session.startTs) / 1000);
-                const initiatorName = session.initiatorId ? participantMap.get(session.initiatorId) : "Unknown";
+                const initiatorName = session.initiatorId
+                  ? participantMap.get(session.initiatorId)
+                  : t("sessions.unknown");
                 const colorClass = initiatorName ? getAvatarColor(initiatorName) : "bg-base-300";
 
                 return (
@@ -141,11 +145,15 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
                     {/* Stats Horizontal */}
                     <div className="flex-1 flex items-center gap-6 justify-end mr-4">
                       <div className="text-right">
-                        <p className="text-[9px] opacity-30 uppercase font-black tracking-tighter mb-0.5">Duration</p>
+                        <p className="text-[9px] opacity-30 uppercase font-black tracking-tighter mb-0.5">
+                          {t("sessions.duration")}
+                        </p>
                         <p className="text-xs font-mono font-bold leading-none">{duration}</p>
                       </div>
                       <div className="text-right min-w-[60px]">
-                        <p className="text-[9px] opacity-30 uppercase font-black tracking-tighter mb-0.5">Msgs</p>
+                        <p className="text-[9px] opacity-30 uppercase font-black tracking-tighter mb-0.5">
+                          {t("sessions.msgs")}
+                        </p>
                         <p className="text-xs font-mono font-bold leading-none">{session.messageCount}</p>
                       </div>
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-2">

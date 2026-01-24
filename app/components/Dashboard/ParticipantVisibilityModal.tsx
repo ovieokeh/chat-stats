@@ -2,6 +2,7 @@
 
 import { Eye, EyeOff } from "lucide-react";
 import { db } from "../../lib/db";
+import { useText } from "../../hooks/useText";
 
 interface Participant {
   id?: number;
@@ -21,6 +22,7 @@ export const ParticipantVisibilityModal: React.FC<ParticipantVisibilityModalProp
   onClose,
   participants,
 }) => {
+  const { t } = useText();
   return (
     <dialog id="participant_visibility_modal" className="modal modal-bottom sm:modal-middle" open={isOpen}>
       <div className="modal-box p-0 max-w-md bg-base-100">
@@ -28,8 +30,8 @@ export const ParticipantVisibilityModal: React.FC<ParticipantVisibilityModalProp
           ✕
         </button>
         <div className="p-6">
-          <h3 className="font-bold text-lg mb-4">Participant Visibility</h3>
-          <p className="text-sm opacity-70 mb-4">Hidden participants are excluded from all analysis and statistics.</p>
+          <h3 className="font-bold text-lg mb-4">{t("modals.visibility.title")}</h3>
+          <p className="text-sm opacity-70 mb-4">{t("modals.visibility.description")}</p>
           <div className="space-y-2 max-h-80 overflow-y-auto">
             {participants
               ?.filter((p) => !p.isSystem)
@@ -41,7 +43,7 @@ export const ParticipantVisibilityModal: React.FC<ParticipantVisibilityModalProp
                     onClick={async () => await db.participants.update(p.id!, { isHidden: !p.isHidden })}
                   >
                     {p.isHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                    {p.isHidden ? "Show" : "Hide"}
+                    {p.isHidden ? t("modals.visibility.show") : t("modals.visibility.hide")}
                   </button>
                 </div>
               ))}

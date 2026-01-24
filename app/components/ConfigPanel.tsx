@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
-import { ExportConfig, DEFAULT_CONFIG } from "../types";
+import { ExportConfig } from "../types";
 import { Save, RotateCcw } from "lucide-react";
+import { useText } from "../hooks/useText";
 
 interface ConfigPanelProps {
   config: ExportConfig;
@@ -10,18 +11,19 @@ interface ConfigPanelProps {
   onReset: () => void;
 }
 
-// Human-readable time formatting
-const formatDuration = (minutes: number): string => {
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (mins === 0) return `${hours} hour${hours > 1 ? "s" : ""}`;
-  return `${hours}h ${mins}m`;
-};
-
 export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onSave, onReset }) => {
+  const { t } = useText();
   const [localConfig, setLocalConfig] = React.useState<ExportConfig>(config);
   const [isDirty, setIsDirty] = React.useState(false);
+
+  // Human-readable time formatting
+  const formatDuration = (minutes: number): string => {
+    if (minutes < 60) return `${minutes} ${t("common.duration.min")}`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (mins === 0) return `${hours} ${hours > 1 ? t("common.duration.hours") : t("common.duration.hour")}`;
+    return `${hours}${t("common.duration.h")} ${mins}${t("common.duration.m")}`;
+  };
 
   const handleChange = (section: keyof ExportConfig, key: string, value: any) => {
     setLocalConfig((prev) => ({
@@ -42,29 +44,29 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onSave, onRese
   return (
     <div className="card bg-base-100 border border-base-300/60 shadow-sm">
       <div className="card-body p-6">
-        <h3 className="card-title text-lg mb-4">Analysis Configuration</h3>
+        <h3 className="card-title text-lg mb-4">{t("configPanel.title")}</h3>
 
         {/* Parsing Settings */}
         <div className="space-y-4">
-          <h4 className="text-sm font-semibold uppercase tracking-wide opacity-50">Parsing & formatting</h4>
+          <h4 className="text-sm font-semibold uppercase tracking-wide opacity-50">{t("configPanel.parsing.title")}</h4>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Date Format</span>
+                <span className="label-text">{t("configPanel.parsing.dateFormat.label")}</span>
               </label>
               <select
                 className="select select-bordered w-full"
                 value={localConfig.parsing.dateFormat}
                 onChange={(e) => handleChange("parsing", "dateFormat", e.target.value)}
               >
-                <option value="DD/MM/YYYY">DD/MM/YYYY (Euro)</option>
-                <option value="MM/DD/YYYY">MM/DD/YYYY (US)</option>
+                <option value="DD/MM/YYYY">{t("configPanel.parsing.dateFormat.euro")}</option>
+                <option value="MM/DD/YYYY">{t("configPanel.parsing.dateFormat.us")}</option>
               </select>
             </div>
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Timezone</span>
+                <span className="label-text">{t("configPanel.parsing.timezone.label")}</span>
               </label>
               <select
                 className="select select-bordered w-full"
@@ -90,10 +92,8 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onSave, onRese
                 onChange={(e) => handleChange("parsing", "strictMode", !e.target.checked)}
               />
               <div>
-                <span className="label-text font-medium">Skip problematic lines</span>
-                <p className="text-xs opacity-60 mt-0.5">
-                  When enabled, unparseable messages are skipped. Disable to stop on errors.
-                </p>
+                <span className="label-text font-medium">{t("configPanel.parsing.strictMode.label")}</span>
+                <p className="text-xs opacity-60 mt-0.5">{t("configPanel.parsing.strictMode.description")}</p>
               </div>
             </label>
           </div>
@@ -103,11 +103,11 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onSave, onRese
 
         {/* Session Logic */}
         <div className="space-y-5">
-          <h4 className="text-sm font-semibold uppercase tracking-wide opacity-50">Conversation Sessions</h4>
+          <h4 className="text-sm font-semibold uppercase tracking-wide opacity-50">{t("configPanel.session.title")}</h4>
 
           <div className="form-control">
             <div className="flex justify-between items-center mb-2">
-              <label className="label-text font-medium">Session break after silence</label>
+              <label className="label-text font-medium">{t("configPanel.session.gapThreshold.label")}</label>
               <span className="badge badge-primary badge-outline font-mono">
                 {formatDuration(localConfig.session.gapThresholdMinutes)}
               </span>
@@ -122,17 +122,17 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onSave, onRese
               onChange={(e) => handleChange("session", "gapThresholdMinutes", parseInt(e.target.value))}
             />
             <div className="flex justify-between text-[10px] opacity-50 mt-1 px-1">
-              <span>15 min</span>
-              <span>2 hours</span>
-              <span>4 hours</span>
-              <span>8 hours</span>
+              <span>{t("configPanel.session.gapThreshold.markers.15m")}</span>
+              <span>{t("configPanel.session.gapThreshold.markers.2h")}</span>
+              <span>{t("configPanel.session.gapThreshold.markers.4h")}</span>
+              <span>{t("configPanel.session.gapThreshold.markers.8h")}</span>
             </div>
-            <p className="text-xs opacity-60 mt-2">A new conversation starts when there's no activity for this long.</p>
+            <p className="text-xs opacity-60 mt-2">{t("configPanel.session.gapThreshold.description")}</p>
           </div>
 
           <div className="form-control">
             <div className="flex justify-between items-center mb-2">
-              <label className="label-text font-medium">Reply detection window</label>
+              <label className="label-text font-medium">{t("configPanel.session.replyWindow.label")}</label>
               <span className="badge badge-primary badge-outline font-mono">
                 {formatDuration(localConfig.session.replyWindowMinutes)}
               </span>
@@ -147,12 +147,12 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onSave, onRese
               onChange={(e) => handleChange("session", "replyWindowMinutes", parseInt(e.target.value))}
             />
             <div className="flex justify-between text-[10px] opacity-50 mt-1 px-1">
-              <span>5 min</span>
-              <span>30 min</span>
-              <span>1 hour</span>
-              <span>2 hours</span>
+              <span>{t("configPanel.session.replyWindow.markers.5m")}</span>
+              <span>{t("configPanel.session.replyWindow.markers.30m")}</span>
+              <span>{t("configPanel.session.replyWindow.markers.1h")}</span>
+              <span>{t("configPanel.session.replyWindow.markers.2h")}</span>
             </div>
-            <p className="text-xs opacity-60 mt-2">Messages sent within this time frame are considered replies.</p>
+            <p className="text-xs opacity-60 mt-2">{t("configPanel.session.replyWindow.description")}</p>
           </div>
         </div>
 
@@ -160,10 +160,10 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onSave, onRese
 
         <div className="flex justify-end gap-3">
           <button className="btn btn-ghost" onClick={onReset} disabled={!isDirty}>
-            <RotateCcw className="w-4 h-4" /> Reset
+            <RotateCcw className="w-4 h-4" /> {t("configPanel.actions.reset")}
           </button>
           <button className="btn btn-primary" onClick={handleSave} disabled={!isDirty}>
-            <Save className="w-4 h-4" /> Save & Recompute
+            <Save className="w-4 h-4" /> {t("configPanel.actions.saveAndRecompute")}
           </button>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { usePrivacy } from "../../context/PrivacyContext";
 import { obfuscateName } from "../../lib/utils";
 import { Crown, FastForward, Copy, TrendingUp } from "lucide-react";
 import { db } from "../../lib/db";
+import { useText } from "../../hooks/useText";
 import { motion } from "framer-motion";
 import {
   Radar,
@@ -59,6 +60,7 @@ interface Badge {
 
 export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants }) => {
   const { isPrivacyMode } = usePrivacy();
+  const { t } = useText();
 
   // --- Data Preparation for Radar Chart ---
   const radarData = React.useMemo(() => {
@@ -81,32 +83,33 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
     const axes = [
       {
         key: "Volume",
-        label: "Volume",
-        description: "Total messages sent",
-        formatter: (val: number) => `${val.toLocaleString()} msgs`,
+        label: t("dashboard.participantStats.radar.axes.volume.label"),
+        description: t("dashboard.participantStats.radar.axes.volume.description"),
+        formatter: (val: number) =>
+          `${val.toLocaleString()} ${t("dashboard.participantStats.radar.axes.volume.suffix")}`,
       },
       {
         key: "Speed",
-        label: "Speed",
-        description: "Median reply time",
+        label: t("dashboard.participantStats.radar.axes.speed.label"),
+        description: t("dashboard.participantStats.radar.axes.speed.description"),
         formatter: (val: number) => formatDurationHuman(val),
       },
       {
         key: "Initiative",
-        label: "Initiative",
-        description: "Conversations started %",
+        label: t("dashboard.participantStats.radar.axes.initiative.label"),
+        description: t("dashboard.participantStats.radar.axes.initiative.description"),
         formatter: (val: number) => `${val.toFixed(0)}%`,
       },
       {
         key: "Verbosity",
-        label: "Verbosity",
-        description: "Avg words per message",
-        formatter: (val: number) => `${val.toFixed(1)} words/msg`,
+        label: t("dashboard.participantStats.radar.axes.verbosity.label"),
+        description: t("dashboard.participantStats.radar.axes.verbosity.description"),
+        formatter: (val: number) => `${val.toFixed(1)} ${t("dashboard.participantStats.radar.axes.verbosity.suffix")}`,
       },
       {
         key: "Engagement",
-        label: "Engagement",
-        description: "Impact score (Volume + Intiation)",
+        label: t("dashboard.participantStats.radar.axes.engagement.label"),
+        description: t("dashboard.participantStats.radar.axes.engagement.description"),
         formatter: (val: number) => val.toFixed(0),
       },
     ];
@@ -273,48 +276,48 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
     if (isTop("msgCount"))
       badges.push({
         id: "volume",
-        label: "Heavyweight",
-        description: "Most active participant (highest message count)",
+        label: t("dashboard.participantStats.badges.volume.label"),
+        description: t("dashboard.participantStats.badges.volume.description"),
         icon: <Crown size={12} />,
         color: "bg-primary text-primary-content",
       });
     if (isTop("yapIndex"))
       badges.push({
         id: "yap",
-        label: "Yap Master",
-        description: "Highest average words per message",
+        label: t("dashboard.participantStats.badges.yap.label"),
+        description: t("dashboard.participantStats.badges.yap.description"),
         icon: <TrendingUp size={12} />,
         color: "bg-secondary text-secondary-content",
       });
     if (isTop("medianReplyTime", false))
       badges.push({
         id: "speed",
-        label: "The Flash",
-        description: "Fastest median reply time",
+        label: t("dashboard.participantStats.badges.speed.label"),
+        description: t("dashboard.participantStats.badges.speed.description"),
         icon: <FastForward size={12} />,
         color: "bg-success text-success-content",
       });
     if (isTop("initiationRate"))
       badges.push({
         id: "instigator",
-        label: "Instigator",
-        description: "Starts the most conversations (highest initiation rate)",
+        label: t("dashboard.participantStats.badges.initiative.label"),
+        description: t("dashboard.participantStats.badges.initiative.description"),
         icon: <UserPlus size={12} />,
         color: "bg-info text-info-content",
       });
     if (isTop("ghostCount"))
       badges.push({
         id: "ghost",
-        label: "Ghost",
-        description: "Frequently takes >12 hours to reply",
+        label: t("dashboard.participantStats.badges.ghost.label"),
+        description: t("dashboard.participantStats.badges.ghost.description"),
         icon: <Ghost size={12} />,
         color: "bg-slate-600 text-white",
       });
     if (isTop("doubleTextCount"))
       badges.push({
         id: "copy",
-        label: "Double Texter",
-        description: "Most likely to send multiple messages in a row",
+        label: t("dashboard.participantStats.badges.doubleText.label"),
+        description: t("dashboard.participantStats.badges.doubleText.description"),
         icon: <Copy size={12} />,
         color: "bg-orange-500 text-white",
       });
@@ -337,10 +340,14 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
         <div className="relative z-10 flex flex-col items-center">
           <div className="text-center mb-6">
             <h3 className="text-2xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              {participants.length > 10 ? "Participation Landscape" : "Chat Persona"}
+              {participants.length > 10
+                ? t("dashboard.participantStats.radar.title.landscape")
+                : t("dashboard.participantStats.radar.title.persona")}
             </h3>
             <p className="text-sm opacity-50">
-              {participants.length > 10 ? "Mapping volume vs responsiveness" : "Comparing communication styles"}
+              {participants.length > 10
+                ? t("dashboard.participantStats.radar.subtitle.landscape")
+                : t("dashboard.participantStats.radar.subtitle.persona")}
             </p>
           </div>
 
@@ -376,7 +383,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                     name="Reply Time"
                     tickFormatter={(val) => formatDurationHuman(val)}
                     label={{
-                      value: "Avg Reply Time (s)",
+                      value: t("dashboard.participantStats.radar.axes.replyTime.label"),
                       position: "bottom",
                       offset: 0,
                       opacity: 0.5,
@@ -387,9 +394,9 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                   <YAxis
                     type="number"
                     dataKey="y"
-                    name="Messages"
+                    name={t("dashboard.participantStats.radar.axes.volume.label")}
                     label={{
-                      value: "Message Volume",
+                      value: t("dashboard.participantStats.radar.axes.volume.label"),
                       angle: -90,
                       position: "left",
                       offset: 0,
@@ -453,18 +460,22 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
       {/* Unified League Table */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between px-4">
-          <h3 className="text-lg font-bold opacity-50 uppercase tracking-wider text-xs">League Table</h3>
-          <div className="text-[10px] opacity-40 uppercase font-bold tracking-wider">Ranked by Impact</div>
+          <h3 className="text-lg font-bold opacity-50 uppercase tracking-wider text-xs">
+            {t("dashboard.participantStats.table.title")}
+          </h3>
+          <div className="text-[10px] opacity-40 uppercase font-bold tracking-wider">
+            {t("dashboard.participantStats.table.rankedBy")}
+          </div>
         </div>
 
         <div className="bg-base-100/50 border border-base-200 rounded-[2rem] overflow-hidden backdrop-blur-sm">
           {/* Table Header - Hidden on Mobile */}
           <div className="hidden md:grid grid-cols-12 gap-4 p-4 border-b border-base-200/50 text-[10px] uppercase font-bold tracking-wider opacity-50">
-            <div className="col-span-1 text-center">#</div>
-            <div className="col-span-4">Participant</div>
-            <div className="col-span-3">Volume</div>
-            <div className="col-span-2 text-center">Speed</div>
-            <div className="col-span-2 text-right">Impact</div>
+            <div className="col-span-1 text-center">{t("dashboard.participantStats.table.headers.rank")}</div>
+            <div className="col-span-4">{t("dashboard.participantStats.table.headers.participant")}</div>
+            <div className="col-span-3">{t("dashboard.participantStats.table.headers.volume")}</div>
+            <div className="col-span-2 text-center">{t("dashboard.participantStats.table.headers.speed")}</div>
+            <div className="col-span-2 text-right">{t("dashboard.participantStats.table.headers.impact")}</div>
           </div>
 
           {/* Table Rows & Mobile Cards */}
@@ -474,7 +485,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
               .map((p, index) => {
                 const badges = getBadges(p);
                 const handleHide = async () => {
-                  if (confirm(`Hide ${p.name} from analysis? You can unhide them in settings.`)) {
+                  if (confirm(t("dashboard.participantStats.table.tooltips.hideConfirm", { name: p.name }))) {
                     await db.participants.update(p.id, { isHidden: true });
                   }
                 };
@@ -505,7 +516,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                           {p.ghostCount > 5 && (
                             <div
                               className="absolute -bottom-1 -right-1 bg-base-100 rounded-full p-0.5 border border-base-200"
-                              title="Frequent Ghost"
+                              title={t("dashboard.participantStats.table.tooltips.ghost")}
                             >
                               <Ghost size={10} className="text-slate-400" />
                             </div>
@@ -565,7 +576,9 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                       <div className="grid grid-cols-3 gap-2 text-xs pl-2 bg-base-200/30 rounded-xl p-3">
                         {/* Volume */}
                         <div className="flex flex-col gap-1">
-                          <span className="opacity-50 text-[10px] uppercase font-bold tracking-wider">Volume</span>
+                          <span className="opacity-50 text-[10px] uppercase font-bold tracking-wider">
+                            {t("dashboard.participantStats.table.headers.volume")}
+                          </span>
                           <div className="font-semibold">
                             {p.msgCount.toLocaleString()}{" "}
                             <span className="opacity-50 text-[10px]">({p.messageShare.toFixed(1)}%)</span>
@@ -573,12 +586,16 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                         </div>
                         {/* Speed */}
                         <div className="flex flex-col gap-1 text-center">
-                          <span className="opacity-50 text-[10px] uppercase font-bold tracking-wider">Speed</span>
+                          <span className="opacity-50 text-[10px] uppercase font-bold tracking-wider">
+                            {t("dashboard.participantStats.table.headers.speed")}
+                          </span>
                           <div className="font-semibold">{formatDurationHuman(p.medianReplyTime)}</div>
                         </div>
                         {/* Yap */}
                         <div className="flex flex-col gap-1 text-right">
-                          <span className="opacity-50 text-[10px] uppercase font-bold tracking-wider">Yap</span>
+                          <span className="opacity-50 text-[10px] uppercase font-bold tracking-wider">
+                            {t("dashboard.participantStats.table.headers.yap")}
+                          </span>
                           <div className="font-semibold">{p.yapIndex.toFixed(1)}</div>
                         </div>
                       </div>
@@ -609,7 +626,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                           {p.ghostCount > 5 && (
                             <div
                               className="absolute -bottom-1 -right-1 bg-base-100 rounded-full p-0.5"
-                              title="Frequent Ghost"
+                              title={t("dashboard.participantStats.table.tooltips.ghost")}
                             >
                               <Ghost size={12} className="text-slate-400" />
                             </div>
@@ -679,7 +696,9 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                           <span className="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
                             {p.carryScore.toFixed(0)}
                           </span>
-                          <span className="text-[9px] uppercase font-bold opacity-30">Impact</span>
+                          <span className="text-[9px] uppercase font-bold opacity-30">
+                            {t("dashboard.participantStats.table.headers.impact")}
+                          </span>
                         </div>
                       </div>
                     </div>

@@ -9,18 +9,18 @@ import { format } from "date-fns";
 import { MessageSquare } from "lucide-react";
 import { PageLayout } from "./components/Layout/PageLayout";
 import { Skeleton } from "./components/UI/Skeleton";
+import { useText } from "./hooks/useText";
 
 export default function Home() {
   const imports = useLiveQuery(() => db.imports.orderBy("importedAt").reverse().toArray());
+  const { t } = useText();
 
   return (
     <PageLayout maxWidth="4xl">
       <div className="space-y-12 py-12">
         <div className="text-center space-y-4">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">WhatsApp Insights</h1>
-          <p className="text-lg text-base-content/70 max-w-lg mx-auto">
-            Analyze your chat history locally. Your data never leaves your device.
-          </p>
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">{t("home.title")}</h1>
+          <p className="text-lg text-base-content/70 max-w-lg mx-auto">{t("home.description")}</p>
         </div>
 
         <FileImporter />
@@ -44,7 +44,7 @@ export default function Home() {
           </div>
         ) : imports.length > 0 ? (
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold ml-2 opacity-80">Recent Imports</h2>
+            <h2 className="text-xl font-semibold ml-2 opacity-80">{t("home.recentImports")}</h2>
             <div className="grid gap-4">
               {imports.map((imp) => (
                 <Link key={imp.id} href={`/imports/${imp.id}`}>
@@ -57,7 +57,7 @@ export default function Home() {
                         <h3 className="font-semibold text-lg">{imp.filename}</h3>
                         <p className="text-sm opacity-60">{format(imp.importedAt, "MMM d, yyyy • HH:mm")}</p>
                       </div>
-                      <button className="btn btn-ghost btn-sm">View Dashboard</button>
+                      <button className="btn btn-ghost btn-sm">{t("home.viewDashboard")}</button>
                     </div>
                   </div>
                 </Link>
@@ -70,14 +70,14 @@ export default function Home() {
           <button
             className="text-xs font-semibold opacity-30 hover:opacity-100 hover:text-error transition-all uppercase tracking-widest p-2"
             onClick={async () => {
-              if (confirm("Reset everything? All your imported data will be wiped.")) {
+              if (confirm(t("home.resetConfirm"))) {
                 const { clearDatabase } = await import("./lib/db");
                 await clearDatabase();
                 window.location.reload();
               }
             }}
           >
-            Clear Application Data
+            {t("home.clearData")}
           </button>
         </div>
       </div>

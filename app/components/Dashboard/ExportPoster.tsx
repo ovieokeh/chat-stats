@@ -3,6 +3,7 @@
 import React from "react";
 import { MessageSquare, Award, Clock, Hash, Moon, Zap, Ghost, Divide, Share2, Sun } from "lucide-react";
 import { formatNumber } from "../../lib/format";
+import { useText } from "../../hooks/useText";
 
 export type ExportPlatform = "stories" | "feed";
 // We now export based on "Persona" logic rather than just generic types
@@ -40,13 +41,11 @@ interface ExportPosterProps {
 }
 
 export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insightId = "volume", data }) => {
+  const { t } = useText();
   const isStories = platform === "stories";
 
   // Base dimensions based on platform
   const dimensions = isStories ? { width: 1080, height: 1920 } : { width: 1080, height: 1080 };
-
-  // Theme Colors (using CSS variables would be ideal, but for image export we need explicit flavors often)
-  // We'll simulate the "Neo-Editorial" look with high contrast and bold colors.
 
   const personaConfigs: Record<
     string,
@@ -63,31 +62,31 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
     }
   > = {
     volume: {
-      roleTitle: "THE PROTAGONIST",
-      heroTitle: "MAIN\nCHARACTER\nENERGY",
-      tagline: "The group chat doesn't exist without you.",
+      roleTitle: t("dashboard.export.personas.volume.title"),
+      heroTitle: t("dashboard.export.personas.volume.hero"),
+      tagline: t("dashboard.export.personas.volume.tagline"),
       icon: <Award className="w-full h-full" />,
       getVal: (p) => formatNumber(p.msgCount),
-      getDetail: (p) => `msgs sent`,
+      getDetail: (p) => t("dashboard.export.personas.volume.suffix"),
       sort: (a, b) => b.msgCount - a.msgCount,
       bgClass: "bg-primary text-primary-content",
       accentClass: "bg-white/20",
     },
     yap: {
-      roleTitle: "THE YAPPER",
-      heroTitle: "CERTIFIED\nYAPAHOLIC",
-      tagline: "Why say it in 5 words when 50 will do?",
+      roleTitle: t("dashboard.export.personas.yap.title"),
+      heroTitle: t("dashboard.export.personas.yap.hero"),
+      tagline: t("dashboard.export.personas.yap.tagline"),
       icon: <Share2 className="w-full h-full" />,
       getVal: (p) => p.yapIndex.toFixed(1),
-      getDetail: (p) => `words / msg`,
+      getDetail: (p) => t("dashboard.export.personas.yap.suffix"),
       sort: (a, b) => b.yapIndex - a.yapIndex,
       bgClass: "bg-secondary text-secondary-content",
       accentClass: "bg-white/20",
     },
     speed: {
-      roleTitle: "THE SPEEDSTER",
-      heroTitle: "CHRONICALLY\nONLINE",
-      tagline: "Do you even handle lock your phone?",
+      roleTitle: t("dashboard.export.personas.speed.title"),
+      heroTitle: t("dashboard.export.personas.speed.hero"),
+      tagline: t("dashboard.export.personas.speed.tagline"),
       icon: <Zap className="w-full h-full" />,
       getVal: (p) => {
         const s = p.medianReplyTime;
@@ -95,7 +94,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
         if (s < 3600) return `${Math.floor(s / 60)}m`;
         return `${(s / 3600).toFixed(1)}h`;
       },
-      getDetail: (p) => `reply time`,
+      getDetail: (p) => t("dashboard.export.personas.speed.suffix"),
       sort: (a, b) => {
         if (a.medianReplyTime === 0) return 1;
         if (b.medianReplyTime === 0) return -1;
@@ -105,34 +104,34 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
       accentClass: "bg-white/20",
     },
     night: {
-      roleTitle: "THE VAMPIRE",
-      heroTitle: "MIDNIGHT\nMENACE",
-      tagline: "Sleep is for the weak.",
+      roleTitle: t("dashboard.export.personas.night.title"),
+      heroTitle: t("dashboard.export.personas.night.hero"),
+      tagline: t("dashboard.export.personas.night.tagline"),
       icon: <Moon className="w-full h-full" />,
       getVal: (p) => formatNumber(p.nightOwlCount),
-      getDetail: (p) => `msgs after 12AM`,
+      getDetail: (p) => t("dashboard.export.personas.night.suffix"),
       sort: (a, b) => b.nightOwlCount - a.nightOwlCount,
       bgClass: "bg-neutral text-neutral-content",
       accentClass: "bg-white/10",
     },
     ghost: {
-      roleTitle: "THE GHOST",
-      heroTitle: "LEFT ON\nREAD",
-      tagline: "See you in 3-5 business days.",
+      roleTitle: t("dashboard.export.personas.ghost.title"),
+      heroTitle: t("dashboard.export.personas.ghost.hero"),
+      tagline: t("dashboard.export.personas.ghost.tagline"),
       icon: <Ghost className="w-full h-full" />,
       getVal: (p) => `${p.ghostCount}`,
-      getDetail: (p) => `times ghosted`,
+      getDetail: (p) => t("dashboard.export.personas.ghost.suffix"),
       sort: (a, b) => b.ghostCount - a.ghostCount,
       bgClass: "bg-base-300 text-base-content",
       accentClass: "bg-black/10",
     },
     double: {
-      roleTitle: "THE DOUBLE TEXTER",
-      heroTitle: "PLEASE\nRESPOND",
-      tagline: "Talking to themselves (again).",
+      roleTitle: t("dashboard.export.personas.double.title"),
+      heroTitle: t("dashboard.export.personas.double.hero"),
+      tagline: t("dashboard.export.personas.double.tagline"),
       icon: <MessageSquare className="w-full h-full" />,
       getVal: (p) => formatNumber(p.doubleTextCount),
-      getDetail: (p) => `double texts`,
+      getDetail: (p) => t("dashboard.export.personas.double.suffix"),
       sort: (a, b) => b.doubleTextCount - a.doubleTextCount,
       bgClass: "bg-info text-info-content",
       accentClass: "bg-white/20",
@@ -172,7 +171,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
           height: `${dimensions.height}px`,
         }}
       >
-        <p className="text-4xl font-bold opacity-50">Add participants to generate personas</p>
+        <p className="text-4xl font-bold opacity-50">{t("dashboard.export.general.placeholder")}</p>
       </div>
     );
   }
@@ -203,10 +202,10 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
                 <div className="w-8 h-8 opacity-90">{config.icon}</div>
               </div>
               <span className="font-bold tracking-widest uppercase opacity-70 text-lg">
-                {data.chatName || "Chat Analysis"}
+                {data.chatName || t("navbar.defaultTitle")}
               </span>
             </div>
-            <div className="font-mono opacity-50 text-xl tracking-tighter">2025</div>
+            <div className="font-mono opacity-50 text-xl tracking-tighter">{new Date().getFullYear()}</div>
           </div>
 
           {/* Role Header */}
@@ -268,8 +267,8 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
 
           {/* Footer */}
           <div className={`${isStories ? "mt-12" : "mt-6"} flex justify-between items-end opacity-60`}>
-            <div className="text-lg font-bold tracking-wide">CHAT ANALYZER</div>
-            <div className="text-sm font-mono">GENERATED LOCALLY</div>
+            <div className="text-lg font-bold tracking-wide">{t("dashboard.export.general.analyzer")}</div>
+            <div className="text-sm font-mono">{t("dashboard.export.general.generatedLocally")}</div>
           </div>
         </div>
       )}
@@ -278,12 +277,10 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
       {type !== "persona" && (
         <div className="flex-1 flex items-center justify-center p-16">
           <div className="text-center">
-            <h1 className="text-8xl font-black tracking-tighter mb-8">
-              {type === "leaderboard" ? "THE\nRANKINGS" : "CHAT\nWRAPPED"}
+            <h1 className="text-8xl font-black tracking-tighter mb-8 whitespace-pre-line">
+              {type === "leaderboard" ? t("dashboard.export.general.rankings") : t("dashboard.export.general.wrapped")}
             </h1>
-            <p className="text-2xl opacity-60 max-w-2xl mx-auto">
-              Select a specific persona to generate a character card.
-            </p>
+            <p className="text-2xl opacity-60 max-w-2xl mx-auto">{t("dashboard.export.general.hint")}</p>
           </div>
         </div>
       )}

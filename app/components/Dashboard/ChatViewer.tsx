@@ -10,6 +10,7 @@ import { getAvatarColor } from "../../lib/colors";
 import { Skeleton } from "../UI/Skeleton";
 import { usePrivacy } from "../../context/PrivacyContext";
 import { obfuscateName, obfuscateText } from "../../lib/utils";
+import { useText } from "../../hooks/useText";
 
 interface ChatViewerProps {
   importId: number;
@@ -58,6 +59,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
   const [showFullHistory, setShowFullHistory] = useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const { isPrivacyMode } = usePrivacy();
+  const { t } = useText();
 
   // Scroll to top on page change
   useEffect(() => {
@@ -220,9 +222,9 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
       {/* ... (Header) ... */}
       <div className="p-4 border-b border-base-300/60 flex flex-col w-full justify-between gap-4">
         <div className="flex items-center justify-between gap-4 w-full">
-          <h3 className="text-lg font-semibold hidden md:block">Message History</h3>
+          <h3 className="text-lg font-semibold hidden md:block">{t("dashboard.chatViewer.title")}</h3>
           <div className="flex items-center gap-2">
-            <span className="text-xs opacity-60">View as:</span>
+            <span className="text-xs opacity-60">{t("dashboard.chatViewer.viewAs")}</span>
             <select
               className="select select-sm select-bordered w-32 max-w-xs text-xs"
               value={primaryViewerId || ""}
@@ -242,14 +244,14 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/50" />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder={t("dashboard.chatViewer.searchPlaceholder")}
               className="input input-bordered input-sm pl-9 w-full rounded-full"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPage(0);
               }}
-              aria-label="Search messages"
+              aria-label={t("dashboard.chatViewer.searchAriaLabel")}
             />
           </div>
 
@@ -265,7 +267,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
                   setHasJumped(false); // Reset jump trigger if needed, or maybe not.
                 }}
               >
-                This moment
+                {t("dashboard.chatViewer.timeRange.thisMoment")}
               </button>
               <button
                 className={`btn btn-xs rounded-md ${
@@ -277,7 +279,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
                   setHasJumped(false);
                 }}
               >
-                Full History
+                {t("dashboard.chatViewer.timeRange.fullHistory")}
               </button>
             </div>
           )}
@@ -302,12 +304,14 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
 
         {timeRange && messages && messages.length > 0 && page === 0 && (
           <div className="flex justify-center py-4">
-            <div className="badge badge-soft badge-info gap-2 text-xs font-medium">Start of moment view</div>
+            <div className="badge badge-soft badge-info gap-2 text-xs font-medium">
+              {t("dashboard.chatViewer.momentStart")}
+            </div>
           </div>
         )}
 
         {messages?.map((msg) => {
-          const senderName = msg.senderId ? participantMap.get(msg.senderId) : "System";
+          const senderName = msg.senderId ? participantMap.get(msg.senderId) : t("common.system");
           const isPrimary = msg.senderId === primaryViewerId;
           const isSystem = msg.type === "system";
 
@@ -366,12 +370,14 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
           );
         })}
         {messages && messages.length === 0 && (
-          <div className="text-center text-base-content/50 mt-10">No messages found.</div>
+          <div className="text-center text-base-content/50 mt-10">{t("dashboard.chatViewer.noMessages")}</div>
         )}
 
         {timeRange && messages && messages.length > 0 && page === totalPages - 1 && (
           <div className="flex justify-center py-4">
-            <div className="badge badge-soft badge-error gap-2 text-xs opacity-70">End of moment view</div>
+            <div className="badge badge-soft badge-error gap-2 text-xs opacity-70">
+              {t("dashboard.chatViewer.momentEnd")}
+            </div>
           </div>
         )}
       </div>
@@ -382,17 +388,17 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
           disabled={page === 0}
           onClick={() => setPage((p) => Math.max(0, p - 1))}
         >
-          <ChevronLeft className="w-4 h-4" /> Prev
+          <ChevronLeft className="w-4 h-4" /> {t("common.pagination.prev")}
         </button>
         <span className="text-xs opacity-50">
-          Page {page + 1} of {totalPages || 1}
+          {t("common.pagination.status", { page: page + 1, total: totalPages || 1 })}
         </span>
         <button
           className="btn btn-sm btn-ghost"
           disabled={page >= totalPages - 1}
           onClick={() => setPage((p) => p + 1)}
         >
-          Next <ChevronRight className="w-4 h-4" />
+          {t("common.pagination.next")} <ChevronRight className="w-4 h-4" />
         </button>
       </div>
     </div>

@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import { X } from "lucide-react";
 import { usePrivacy } from "../../context/PrivacyContext";
 import { obfuscateText } from "../../lib/utils";
+import { useText } from "../../hooks/useText";
 
 interface Topic {
   text: string;
@@ -19,6 +20,7 @@ interface TopicCloudProps {
 
 export const TopicCloud: React.FC<TopicCloudProps> = ({ topics, onTopicClick, onBlockTopic, isLoading }) => {
   const { isPrivacyMode } = usePrivacy();
+  const { t } = useText();
   const maxCount = useMemo(() => Math.max(...topics.map((t) => t.count), 1), [topics]);
 
   // Function to clamp sizes
@@ -43,8 +45,8 @@ export const TopicCloud: React.FC<TopicCloudProps> = ({ topics, onTopicClick, on
   if (topics.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-base-content/50 h-full">
-        <p>No topics found.</p>
-        <p className="text-xs">Try chatting more!</p>
+        <p>{t("topicCloud.empty")}</p>
+        <p className="text-xs">{t("topicCloud.hint")}</p>
       </div>
     );
   }
@@ -60,7 +62,7 @@ export const TopicCloud: React.FC<TopicCloudProps> = ({ topics, onTopicClick, on
             onClick={() => onTopicClick(topic.text)}
             className="px-2 py-1 rounded-xl text-primary hover:text-primary-focus hover:bg-base-200/50 transition-colors font-semibold"
             style={{ fontSize: getScale(topic.count), lineHeight: "1.2" }}
-            title={`${topic.count} messages`}
+            title={t("topicCloud.countParams", { count: topic.count })}
           >
             {isPrivacyMode ? obfuscateText(topic.text) : topic.text}
           </button>
@@ -73,7 +75,7 @@ export const TopicCloud: React.FC<TopicCloudProps> = ({ topics, onTopicClick, on
                 onBlockTopic(topic.text);
               }}
               className="opacity-0 group-hover:opacity-100 absolute -top-1 -right-2 p-0.5 bg-base-100 shadow-sm rounded-full text-base-content/40 hover:text-error hover:bg-base-200 transition-all scale-75"
-              title="Hide this topic"
+              title={t("topicCloud.hide")}
             >
               <X className="w-3 h-3" />
             </button>

@@ -39,6 +39,7 @@ interface OverviewProps {
 import { formatDurationHuman } from "../../lib/format";
 import { User, Clock, MessageSquare } from "lucide-react";
 import { useState, useMemo } from "react";
+import { useText } from "../../hooks/useText";
 
 export const Overview: React.FC<OverviewProps> = ({
   stats,
@@ -55,6 +56,8 @@ export const Overview: React.FC<OverviewProps> = ({
   const [participantId, setParticipantId] = useState<string>("all");
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
+  const { t } = useText();
+
   const transformedData = useMemo(() => {
     const grid = heatmapData[participantId] || heatmapData["all"];
     if (!grid) return [];
@@ -64,7 +67,7 @@ export const Overview: React.FC<OverviewProps> = ({
         if (metric === "volume") {
           return {
             value: cell.count,
-            tooltip: `${cell.count} messages`,
+            tooltip: t("overview.heatmap.tooltipMessages", { count: cell.count }),
           };
         } else {
           // Speed
@@ -77,23 +80,25 @@ export const Overview: React.FC<OverviewProps> = ({
           const hasData = cell.replyDeltas.length > 0;
           return {
             value: hasData ? cell.medianReplySeconds : 0, // 0 if no data, logic in heatmap handles 0 as bg-base-200
-            tooltip: hasData ? `Median Reply: ${formatDurationHuman(cell.medianReplySeconds)}` : "No replies",
+            tooltip: hasData
+              ? t("overview.heatmap.tooltipSpeed", { duration: formatDurationHuman(cell.medianReplySeconds) })
+              : t("overview.heatmap.noReplies"),
           };
         }
       }),
     );
-  }, [heatmapData, metric, participantId]);
+  }, [heatmapData, metric, participantId, t]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-black tracking-tight">Overview</h2>
-          <p className="text-sm opacity-50">Insights at a glance</p>
+          <h2 className="text-2xl font-black tracking-tight">{t("overview.title")}</h2>
+          <p className="text-sm opacity-50">{t("overview.subtitle")}</p>
         </div>
         <button className="btn btn-primary btn-sm rounded-xl gap-2" onClick={() => setIsShareModalOpen(true)}>
           <Share2 className="w-4 h-4" />
-          Share Summary
+          {t("overview.shareSummary")}
         </button>
       </div>
 
@@ -108,7 +113,7 @@ export const Overview: React.FC<OverviewProps> = ({
           stats,
           topics: topics.slice(0, 10),
           participants,
-          chatName: "Chat Overview",
+          chatName: t("overview.share.defaultChatName"),
         }}
       />
 
@@ -116,11 +121,9 @@ export const Overview: React.FC<OverviewProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
             <ChartCard
-              title={metric === "volume" ? "Weekly Activity Heatmap" : "Responsiveness Heatmap"}
+              title={metric === "volume" ? t("overview.heatmap.titleActivity") : t("overview.heatmap.titleSpeed")}
               takeaway={
-                metric === "volume"
-                  ? "Brighter squares show your most intense chat times."
-                  : "Darker squares show faster reply times."
+                metric === "volume" ? t("overview.heatmap.takeawayActivity") : t("overview.heatmap.takeawaySpeed")
               }
               action={
                 <div className="flex items-center gap-2">
@@ -129,14 +132,14 @@ export const Overview: React.FC<OverviewProps> = ({
                     <button
                       className={`btn btn-xs join-item ${metric === "volume" ? "btn-primary" : "btn-ghost"}`}
                       onClick={() => setMetric("volume")}
-                      title="Message Volume"
+                      title={t("overview.heatmap.metrics.volume")}
                     >
                       <MessageSquare className="w-3 h-3" />
                     </button>
                     <button
                       className={`btn btn-xs join-item ${metric === "speed" ? "btn-primary" : "btn-ghost"}`}
                       onClick={() => setMetric("speed")}
-                      title="Responsiveness"
+                      title={t("overview.heatmap.metrics.responsiveness")}
                     >
                       <Clock className="w-3 h-3" />
                     </button>
@@ -148,7 +151,7 @@ export const Overview: React.FC<OverviewProps> = ({
                     value={participantId}
                     onChange={(e) => setParticipantId(e.target.value)}
                   >
-                    <option value="all">Everyone</option>
+                    <option value="all">{t("overview.heatmap.everyone")}</option>
                     {participants.map((p) => (
                       <option key={p.id} value={p.id.toString()}>
                         {p.name}
@@ -162,7 +165,7 @@ export const Overview: React.FC<OverviewProps> = ({
             </ChartCard>
           </div>
           <div className="lg:col-span-1">
-            <ChartCard title="Topic Cloud" takeaway="What you talk about most. Click to filter history.">
+            <ChartCard title={t("overview.topics.title")} takeaway={t("overview.topics.takeaway")}>
               <div className="h-full max-h-[300px] -m-2">
                 <TopicCloud
                   topics={topics}
@@ -176,7 +179,7 @@ export const Overview: React.FC<OverviewProps> = ({
         </div>
       </div>
 
-      <ChartCard title="Message Volume" takeaway="Visualize the ebb and flow of conversation over time.">
+      <ChartCard title={t("overview.volume.title")} takeaway={t("overview.volume.takeaway")}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={timelineData}>
             <defs>

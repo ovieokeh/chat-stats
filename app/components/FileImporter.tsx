@@ -9,8 +9,10 @@ import { db } from "../lib/db";
 import { DEFAULT_CONFIG } from "../types";
 import { useRouter } from "next/navigation";
 import { sha256 } from "js-sha256";
+import { useText } from "../hooks/useText";
 
 export const FileImporter: React.FC = () => {
+  const { t } = useText();
   const [status, setStatus] = useState<"idle" | "parsing" | "analyzing" | "saving" | "done" | "error">("idle");
   const [progress, setProgress] = useState(0); // 0-100
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export const FileImporter: React.FC = () => {
         setProgress(40);
 
         if (messages.length === 0) {
-          throw new Error("No messages found. Check file format.");
+          throw new Error(t("fileImporter.dropzone.error"));
         }
 
         setStatus("analyzing");
@@ -111,10 +113,10 @@ export const FileImporter: React.FC = () => {
       } catch (e: any) {
         console.error(e);
         setStatus("error");
-        setErrorMsg(e.message || "Unknown error occurred");
+        setErrorMsg(e.message || t("common.error"));
       }
     },
-    [router]
+    [router],
   );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
@@ -142,8 +144,8 @@ export const FileImporter: React.FC = () => {
               <Upload className="w-8 h-8 text-base-content/60" />
             </div>
             <div>
-              <h3 className="text-xl font-semibold mb-2">Drop WhatsApp chat here</h3>
-              <p className="text-base-content/60 text-sm mb-4">or</p>
+              <h3 className="text-xl font-semibold mb-2">{t("fileImporter.dropzone.idle")}</h3>
+              <p className="text-base-content/60 text-sm mb-4">{t("fileImporter.dropzone.or")}</p>
               <button
                 type="button"
                 className="btn btn-primary"
@@ -152,9 +154,9 @@ export const FileImporter: React.FC = () => {
                   open();
                 }}
               >
-                Browse Files
+                {t("fileImporter.dropzone.browse")}
               </button>
-              <p className="text-base-content/40 text-xs mt-4">Expects .txt file from "Export Chat"</p>
+              <p className="text-base-content/40 text-xs mt-4">{t("fileImporter.dropzone.hint")}</p>
             </div>
             {status === "error" && (
               <div className="flex items-center gap-2 text-error mt-4 bg-error/10 px-4 py-2 rounded-lg">
@@ -176,7 +178,7 @@ export const FileImporter: React.FC = () => {
             )}
 
             <div className="text-center space-y-2">
-              <h3 className="text-xl font-semibold capitalize">{status}...</h3>
+              <h3 className="text-xl font-semibold capitalize">{t(`fileImporter.status.${status}`)}</h3>
               <progress className="progress progress-primary w-64" value={progress} max="100"></progress>
             </div>
           </div>

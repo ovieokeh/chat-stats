@@ -4,6 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { MessageSquare, Zap, TrendingUp } from "lucide-react";
 import { formatNumber } from "../../lib/format";
+import { useText } from "../../hooks/useText";
 
 interface OverviewHeroProps {
   stats: {
@@ -14,6 +15,7 @@ interface OverviewHeroProps {
 }
 
 export const OverviewHero: React.FC<OverviewHeroProps> = ({ stats }) => {
+  const { t } = useText();
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
       {/* Hero Card - Total Messages */}
@@ -26,13 +28,13 @@ export const OverviewHero: React.FC<OverviewHeroProps> = ({ stats }) => {
         <div className="relative z-10">
           <div className="flex items-center gap-2 opacity-80 mb-2">
             <MessageSquare className="w-5 h-5" />
-            <span className="text-sm font-bold uppercase tracking-wider">Total Vibe Check</span>
+            <span className="text-sm font-bold uppercase tracking-wider">{t("dashboard.hero.totalTitle")}</span>
           </div>
           <h2 className="text-5xl md:text-7xl font-black tracking-tight">{formatNumber(stats.totalMessages)}</h2>
         </div>
 
         <div className="relative z-10">
-          <p className="opacity-70 font-medium">Messages exchanged in history</p>
+          <p className="opacity-70 font-medium">{t("dashboard.hero.totalDesc")}</p>
         </div>
 
         {/* Decorative Circles */}
@@ -50,13 +52,13 @@ export const OverviewHero: React.FC<OverviewHeroProps> = ({ stats }) => {
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-base-content/50 mb-2">
             <Zap className="w-5 h-5" />
-            <span className="text-sm font-bold uppercase tracking-wider">Daily Vibe</span>
+            <span className="text-sm font-bold uppercase tracking-wider">{t("dashboard.hero.dailyTitle")}</span>
           </div>
           <h2 className="text-5xl md:text-7xl font-black tracking-tight">{Math.round(stats.avgDailyMessages)}</h2>
         </div>
 
         <div className="relative z-10 flex items-center justify-between">
-          <p className="opacity-50 font-medium">Average messages per day</p>
+          <p className="opacity-50 font-medium">{t("dashboard.hero.dailyDesc")}</p>
           <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary group-hover:rotate-12 transition-transform">
             <TrendingUp className="w-6 h-6" />
           </div>

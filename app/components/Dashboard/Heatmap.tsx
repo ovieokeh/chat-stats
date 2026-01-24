@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
+import { useText } from "../../hooks/useText";
 
 interface HeatmapProps {
   data: { value: number; tooltip: string }[][]; // 7x24 grid
   metricType?: "volume" | "speed"; // volume: high=good/dark, speed: low=good/dark (fast reply)
 }
 
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 // Format hour as time label (12a, 1a, 2a... 11a, 12p, 1p... 11p)
@@ -19,6 +19,17 @@ const formatHourLabel = (h: number): string => {
 };
 
 export const Heatmap: React.FC<HeatmapProps> = ({ data, metricType = "volume" }) => {
+  const { t } = useText();
+  const DAYS = [
+    t("common.duration.days.sun", { defaultValue: "Sun" }),
+    t("common.duration.days.mon", { defaultValue: "Mon" }),
+    t("common.duration.days.tue", { defaultValue: "Tue" }),
+    t("common.duration.days.wed", { defaultValue: "Wed" }),
+    t("common.duration.days.thu", { defaultValue: "Thu" }),
+    t("common.duration.days.fri", { defaultValue: "Fri" }),
+    t("common.duration.days.sat", { defaultValue: "Sat" }),
+  ];
+
   // Find max (and min for speed) for scaling
   let max = 0;
   let min = Infinity;
@@ -110,14 +121,14 @@ export const Heatmap: React.FC<HeatmapProps> = ({ data, metricType = "volume" })
         ))}
 
         <div className="flex justify-end gap-2 items-center text-[10px] opacity-50 mt-2">
-          <span>{metricType === "volume" ? "Less" : "Slow"}</span>
+          <span>{metricType === "volume" ? t("overview.heatmap.labels.less") : t("overview.heatmap.labels.slow")}</span>
           <div className="flex gap-0.5">
             <div className="w-2 h-2 rounded-sm bg-base-200"></div>
             <div className="w-2 h-2 rounded-sm bg-primary/20"></div>
             <div className="w-2 h-2 rounded-sm bg-primary/60"></div>
             <div className="w-2 h-2 rounded-sm bg-primary"></div>
           </div>
-          <span>{metricType === "volume" ? "More" : "Fast"}</span>
+          <span>{metricType === "volume" ? t("overview.heatmap.labels.more") : t("overview.heatmap.labels.fast")}</span>
         </div>
       </div>
     </div>

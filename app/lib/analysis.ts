@@ -2,6 +2,7 @@ import { Message, Session, ReplyEdge, ExportConfig, Moment } from "../types";
 import { franc } from "franc";
 import Vader from "vader-sentiment";
 import { DEFAULT_STOPWORDS } from "./constants/default-stopwords";
+import { getText } from "../hooks/useText";
 
 /**
  * Enhanced feature computation with awareness of WhatsApp artifacts.
@@ -60,10 +61,13 @@ export const sessionize = (messages: Message[], config: ExportConfig): Session[]
 
 const createEnhancedSession = (msgs: Message[]): Session => {
   const participants = Array.from(new Set(msgs.map((m) => m.senderId).filter(Boolean)));
-  const typeCounts = msgs.reduce((acc, m) => {
-    acc[m.type] = (acc[m.type] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const typeCounts = msgs.reduce(
+    (acc, m) => {
+      acc[m.type] = (acc[m.type] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
   // Improved initiator detection: skip system messages or messages without a sender
   const initiator = msgs.find((m) => m.senderId && m.type !== "system");
@@ -72,10 +76,13 @@ const createEnhancedSession = (msgs: Message[]): Session => {
   let dominantType: Message["type"] = "text";
   const nonSystemMsgs = msgs.filter((m) => m.type !== "system");
   if (nonSystemMsgs.length > 0) {
-    const counts = nonSystemMsgs.reduce((acc, m) => {
-      acc[m.type] = (acc[m.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const counts = nonSystemMsgs.reduce(
+      (acc, m) => {
+        acc[m.type] = (acc[m.type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     const topArr = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     if (topArr[0][1] / nonSystemMsgs.length > 0.8) {
@@ -292,8 +299,8 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
         type: "volume_spike",
         date,
         ts: anchorTs,
-        title: "Activity Burst",
-        description: `Unusual volume of ${count} messages.`,
+        title: getText("moments.titles.spike"),
+        description: getText("moments.descriptions.spike", { count: count }),
         magnitude: modifiedZ,
         importance: Math.min(0.95, 0.7 + modifiedZ / 10),
         data: {
@@ -324,8 +331,8 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
         type: "long_gap",
         date,
         ts: messages[i].ts,
-        title: "The Return",
-        description: `Picking up the thread after ${Math.floor(diff / 86400000)} days.`,
+        title: getText("moments.titles.return"),
+        description: getText("moments.descriptions.return", { days: Math.floor(diff / 86400000) }),
         magnitude: diff / 86400000,
         importance: 0.8,
         data: {
@@ -355,7 +362,7 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
         ts: s.startTs,
         title: "Marathon Session",
         description: `Deep conversation lasting ${Math.floor(duration / 3600)}h ${Math.floor(
-          (duration % 3600) / 60
+          (duration % 3600) / 60,
         )}m with ${s.messageCount} messages.`,
         magnitude: duration / 3600,
         importance: Math.min(0.9, 0.6 + s.messageCount / 1000),
@@ -388,8 +395,8 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
         type: "sentiment_spike",
         date,
         ts: stats.firstTs,
-        title: "Very Positive Vibe",
-        description: `The conversation was unusually upbeat on this day.`,
+        title: getText("moments.titles.positive"),
+        description: getText("moments.descriptions.positive"),
         magnitude: avg,
         importance: 0.75,
         data: { startTs: stats.firstTs, endTs: stats.firstTs + 86400000 },
@@ -401,8 +408,8 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
         type: "sentiment_spike",
         date,
         ts: stats.firstTs,
-        title: "Heated Debate?",
-        description: `Detected more negative or intense sentiment than usual.`,
+        title: getText("moments.titles.negative"),
+        description: getText("moments.descriptions.negative"),
         magnitude: Math.abs(avg),
         importance: 0.8,
         data: { startTs: stats.firstTs, endTs: stats.firstTs + 86400000 },
@@ -436,7 +443,7 @@ export const checkServiceHealth = async (): Promise<boolean> => {
  */
 const fetchSmartTopics = async (
   messages: Message[],
-  customStopwords: Set<string>
+  customStopwords: Set<string>,
 ): Promise<{ text: string; count: number }[]> => {
   const texts = messages
     .filter((m) => m.rawText && m.type !== "system")
@@ -470,7 +477,7 @@ const fetchSmartTopics = async (
  */
 export const extractTopics = async (
   messages: Message[],
-  customStopwords: Set<string> = new Set()
+  customStopwords: Set<string> = new Set(),
 ): Promise<{ text: string; count: number }[]> => {
   // 1. Try Smart Service
   const isServiceUp = await checkServiceHealth();

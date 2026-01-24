@@ -9,6 +9,7 @@ import { MomentCard } from "../UI/MomentCard";
 import { FilterBar } from "../UI/FilterBar";
 import { Loader2, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useText } from "../../hooks/useText";
 
 interface MomentsFeedProps {
   importId: number;
@@ -40,6 +41,7 @@ export const MomentsFeed: React.FC<MomentsFeedProps> = ({ importId }) => {
   const [filters, setFilters] = React.useState<Record<string, string[]>>({});
   const [page, setPage] = React.useState(0);
   const ITEMS_PER_PAGE = 20;
+  const { t } = useText();
 
   const filteredData = useMemo(() => {
     if (!data) return [];
@@ -87,13 +89,13 @@ export const MomentsFeed: React.FC<MomentsFeedProps> = ({ importId }) => {
   const typeGroups = [
     {
       key: "type",
-      label: "Type",
+      label: t("common.type"),
       multi: true,
       options: [
-        { label: "Volume Spike", value: "volume_spike" },
-        { label: "Marathon Session", value: "marathon_session" },
-        { label: "Revival (Gap)", value: "long_gap" },
-        { label: "Sentiment", value: "sentiment_spike" },
+        { label: t("moments.types.volume_spike"), value: "volume_spike" },
+        { label: t("moments.types.marathon_session"), value: "marathon_session" },
+        { label: t("moments.types.long_gap"), value: "long_gap" },
+        { label: t("moments.types.sentiment_spike"), value: "sentiment_spike" },
       ],
     },
   ];
@@ -105,7 +107,7 @@ export const MomentsFeed: React.FC<MomentsFeedProps> = ({ importId }) => {
         <div className="flex justify-center mb-3">
           <Sparkles className="w-8 h-8 text-base-content/20" />
         </div>
-        <p className="text-base-content/60">No interesting moments found yet.</p>
+        <p className="text-base-content/60">{t("moments.empty")}</p>
       </div>
     );
   }
@@ -120,7 +122,7 @@ export const MomentsFeed: React.FC<MomentsFeedProps> = ({ importId }) => {
       />
 
       {filteredData.length === 0 ? (
-        <div className="text-center py-10 text-base-content/50">No moments match your filters.</div>
+        <div className="text-center py-10 text-base-content/50">{t("moments.emptyFilter")}</div>
       ) : (
         <>
           <ul className="timeline timeline-vertical timeline-compact -ml-4 md:ml-0">
@@ -133,7 +135,10 @@ export const MomentsFeed: React.FC<MomentsFeedProps> = ({ importId }) => {
                   <div className="timeline-start md:text-end mb-2 md:mb-0 pt-2 min-w-[80px]">
                     <div className="font-mono text-xs opacity-50">{dateObj.getFullYear()}</div>
                     <div className="font-bold text-sm tracking-tight">
-                      {dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      {dateObj.toLocaleDateString("en-US", {
+                        month: t("moments.timeline.format.month") as "short",
+                        day: t("moments.timeline.format.day") as "numeric",
+                      })}
                     </div>
                   </div>
 
@@ -179,17 +184,17 @@ export const MomentsFeed: React.FC<MomentsFeedProps> = ({ importId }) => {
                 disabled={page === 0}
                 onClick={() => setPage((p) => p - 1)}
               >
-                « Prev
+                « {t("common.pagination.prev")}
               </button>
               <button className="join-item btn btn-sm btn-active no-animation pointer-events-none">
-                Page {page + 1} of {totalPages}
+                {t("common.pagination.status", { page: page + 1, total: totalPages })}
               </button>
               <button
                 className="join-item btn btn-sm btn-ghost"
                 disabled={page >= totalPages - 1}
                 onClick={() => setPage((p) => p + 1)}
               >
-                Next »
+                {t("common.pagination.next")} »
               </button>
             </div>
           )}
