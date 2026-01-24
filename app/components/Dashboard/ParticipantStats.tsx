@@ -212,17 +212,47 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
 
   if (!participants || participants.length === 0) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {[1, 2].map((i) => (
-          <div key={i} className="bg-base-100 border border-base-200 rounded-[2rem] p-8 h-80">
-            <Skeleton className="h-8 w-1/3 mb-6" />
-            <div className="space-y-4">
-              {[1, 2, 3].map((j) => (
-                <Skeleton key={j} className="h-12 w-full rounded-xl" />
-              ))}
-            </div>
+      <div className="flex flex-col gap-8 w-full animate-pulse">
+        {/* Chart Section Skeleton */}
+        <div className="w-full bg-base-100/50 border border-base-200 rounded-[2.5rem] p-6 lg:p-10 h-[450px] relative overflow-hidden flex flex-col items-center">
+          <Skeleton className="h-8 w-64 mb-2" />
+          <Skeleton className="h-4 w-48 mb-8 opacity-50" />
+          <div className="flex-1 w-full flex items-center justify-center">
+            <Skeleton variant="circular" className="h-64 w-64 rounded-full opacity-10" />
           </div>
-        ))}
+        </div>
+
+        {/* League Table Skeleton */}
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between px-4">
+            <Skeleton className="h-4 w-32 opacity-50" />
+            <Skeleton className="h-3 w-24 opacity-30" />
+          </div>
+
+          <div className="bg-base-100/50 border border-base-200 rounded-[2rem] overflow-hidden p-6 space-y-6">
+            <div className="flex justify-between border-b border-base-200/50 pb-4">
+              <Skeleton className="h-3 w-8" />
+              <Skeleton className="h-3 w-32" />
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center gap-4">
+                <Skeleton className="h-6 w-4 opacity-30" />
+                <Skeleton variant="circular" className="h-10 w-10" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <div className="w-1/3">
+                  <Skeleton className="h-2 w-full rounded-full opacity-30" />
+                </div>
+                <div className="w-16">
+                  <Skeleton className="h-6 w-full rounded-md opacity-50" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -428,8 +458,8 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
         </div>
 
         <div className="bg-base-100/50 border border-base-200 rounded-[2rem] overflow-hidden backdrop-blur-sm">
-          {/* Table Header */}
-          <div className="grid grid-cols-12 gap-4 p-4 border-b border-base-200/50 text-[10px] uppercase font-bold tracking-wider opacity-50">
+          {/* Table Header - Hidden on Mobile */}
+          <div className="hidden md:grid grid-cols-12 gap-4 p-4 border-b border-base-200/50 text-[10px] uppercase font-bold tracking-wider opacity-50">
             <div className="col-span-1 text-center">#</div>
             <div className="col-span-4">Participant</div>
             <div className="col-span-3">Volume</div>
@@ -437,7 +467,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
             <div className="col-span-2 text-right">Impact</div>
           </div>
 
-          {/* Table Rows */}
+          {/* Table Rows & Mobile Cards */}
           <div className="divide-y divide-base-200/50">
             {participants
               .sort((a, b) => b.carryScore - a.carryScore)
@@ -458,72 +488,103 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="grid grid-cols-12 gap-4 p-4 hover:bg-base-100 transition-colors group relative"
+                    className="group relative hover:bg-base-100 transition-colors"
                   >
-                    {/* Rank */}
-                    <div className="col-span-1 text-center font-black text-lg opacity-30 group-hover:opacity-100 transition-opacity">
-                      {index + 1}
-                    </div>
+                    {/* --- Mobile View (Card) --- */}
+                    <div className="md:hidden flex flex-col gap-3 p-4">
+                      {/* Top Row: Rank, Avatar, Name, Impact */}
+                      <div className="flex items-center gap-3">
+                        {/* Rank */}
+                        <div className="font-black text-lg opacity-30 w-6 text-center">{index + 1}</div>
 
-                    {/* Participant Info */}
-                    <div className="col-span-4 flex gap-3">
-                      <div className="relative h-fit">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-sm font-black text-white shadow-sm ring-2 ring-white dark:ring-base-100">
-                          {(isPrivacyMode ? "?" : p.name.charAt(0)).toUpperCase()}
-                        </div>
-                        {/* Status Indicator (e.g. Ghost) */}
-                        {p.ghostCount > 5 && (
-                          <div
-                            className="absolute -bottom-1 -right-1 bg-base-100 rounded-full p-0.5"
-                            title="Frequent Ghost"
-                          >
-                            <Ghost size={12} className="text-slate-400" />
+                        {/* Avatar */}
+                        <div className="relative shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-sm font-black text-white shadow-sm ring-2 ring-white dark:ring-base-100">
+                            {(isPrivacyMode ? "?" : p.name.charAt(0)).toUpperCase()}
                           </div>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold truncate text-sm">
+                          {p.ghostCount > 5 && (
+                            <div
+                              className="absolute -bottom-1 -right-1 bg-base-100 rounded-full p-0.5 border border-base-200"
+                              title="Frequent Ghost"
+                            >
+                              <Ghost size={10} className="text-slate-400" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Name & Hide */}
+                        <div className="flex-1 min-w-0 flex items-center justify-between">
+                          <span className="font-bold truncate text-base">
                             {isPrivacyMode ? obfuscateName(p.name) : p.name}
                           </span>
-                          {/* Primary Badge for quick visual */}
-                          {badges.length > 0 && (
-                            <span
-                              className={`w-2 h-2 rounded-full ${badges[0].color.split(" ")[0]}`}
-                              title={badges[0].label}
-                            />
-                          )}
                           <button
                             onClick={handleHide}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-base-200 rounded-full"
+                            className="p-1.5 bg-base-200/50 rounded-full opacity-50 hover:opacity-100 transition-opacity"
                           >
-                            <EyeOff size={12} className="opacity-50" />
+                            <EyeOff size={14} />
                           </button>
                         </div>
-                        {/* Inline Badge Descriptions */}
-                        {badges.length > 0 && (
-                          <div className="flex flex-col gap-0.5 mt-1">
-                            {badges.map((b) => (
-                              <div key={b.id} className="text-[11px] opacity-70 leading-tight flex items-start gap-1">
-                                {b.icon}
-                                <span>
-                                  <span className="font-semibold">{b.label}:</span>{" "}
-                                  <span className="opacity-80">{b.description}</span>
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
 
-                    {/* Volume Bar */}
-                    <div className="col-span-3">
-                      <div className="flex justify-between text-[10px] mb-1 font-bold">
-                        <span>{p.msgCount.toLocaleString()}</span>
-                        <span className="opacity-40">{p.messageShare.toFixed(0)}%</span>
+                        {/* Impact Score */}
+                        <div className="text-right shrink-0">
+                          <div className="inline-flex flex-col items-end">
+                            <span className="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary leading-none">
+                              {p.carryScore.toFixed(0)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="h-1.5 w-full bg-base-300/50 rounded-full overflow-hidden">
+
+                      {/* Badges Row */}
+                      {badges.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {badges.map((b) => {
+                            // Soft badge styles for mobile
+                            let softClass = "bg-base-200 text-base-content/70";
+                            if (b.id === "volume") softClass = "bg-primary/10 text-primary";
+                            else if (b.id === "yap") softClass = "bg-secondary/10 text-secondary";
+                            else if (b.id === "speed") softClass = "bg-success/10 text-success";
+                            else if (b.id === "instigator") softClass = "bg-info/10 text-info";
+                            else if (b.id === "ghost") softClass = "bg-slate-500/10 text-slate-500";
+                            else if (b.id === "copy") softClass = "bg-orange-500/10 text-orange-500";
+
+                            return (
+                              <div
+                                key={b.id}
+                                className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg ${softClass} font-medium`}
+                              >
+                                {b.icon}
+                                <span>{b.label}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Stats Grid */}
+                      <div className="grid grid-cols-3 gap-2 text-xs pl-2 bg-base-200/30 rounded-xl p-3">
+                        {/* Volume */}
+                        <div className="flex flex-col gap-1">
+                          <span className="opacity-50 text-[10px] uppercase font-bold tracking-wider">Volume</span>
+                          <div className="font-semibold">
+                            {p.msgCount.toLocaleString()}{" "}
+                            <span className="opacity-50 text-[10px]">({p.messageShare.toFixed(1)}%)</span>
+                          </div>
+                        </div>
+                        {/* Speed */}
+                        <div className="flex flex-col gap-1 text-center">
+                          <span className="opacity-50 text-[10px] uppercase font-bold tracking-wider">Speed</span>
+                          <div className="font-semibold">{formatDurationHuman(p.medianReplyTime)}</div>
+                        </div>
+                        {/* Yap */}
+                        <div className="flex flex-col gap-1 text-right">
+                          <span className="opacity-50 text-[10px] uppercase font-bold tracking-wider">Yap</span>
+                          <div className="font-semibold">{p.yapIndex.toFixed(1)}</div>
+                        </div>
+                      </div>
+
+                      {/* Visual Volume Bar */}
+                      <div className="w-full h-1.5 bg-base-300/50 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-primary rounded-full transition-all duration-1000"
                           style={{ width: `${(p.msgCount / maxMsg) * 100}%` }}
@@ -531,21 +592,95 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                       </div>
                     </div>
 
-                    {/* Speed & Stats */}
-                    <div className="col-span-2 flex flex-col items-center  text-xs">
-                      <div className="font-bold whitespace-nowrap" title="Median Reply Time">
-                        {formatDurationHuman(p.medianReplyTime)}
+                    {/* --- Desktop View (Table Row) --- */}
+                    <div className="hidden md:grid grid-cols-12 gap-4 p-4 items-center">
+                      {/* Rank */}
+                      <div className="col-span-1 text-center font-black text-lg opacity-30 group-hover:opacity-100 transition-opacity">
+                        {index + 1}
                       </div>
-                      <div className="text-[10px] opacity-40">yp: {p.yapIndex.toFixed(1)}</div>
-                    </div>
 
-                    {/* Impact Score */}
-                    <div className="col-span-2 text-right">
-                      <div className="inline-flex flex-col">
-                        <span className="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-                          {p.carryScore.toFixed(0)}
-                        </span>
-                        <span className="text-[9px] uppercase font-bold opacity-30">Impact</span>
+                      {/* Participant Info */}
+                      <div className="col-span-4 flex gap-3 items-center">
+                        <div className="relative h-fit shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-sm font-black text-white shadow-sm ring-2 ring-white dark:ring-base-100">
+                            {(isPrivacyMode ? "?" : p.name.charAt(0)).toUpperCase()}
+                          </div>
+                          {/* Status Indicator (e.g. Ghost) */}
+                          {p.ghostCount > 5 && (
+                            <div
+                              className="absolute -bottom-1 -right-1 bg-base-100 rounded-full p-0.5"
+                              title="Frequent Ghost"
+                            >
+                              <Ghost size={12} className="text-slate-400" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold truncate text-sm">
+                              {isPrivacyMode ? obfuscateName(p.name) : p.name}
+                            </span>
+                            {/* Primary Badge for quick visual */}
+                            {badges.length > 0 && (
+                              <span
+                                className={`w-2 h-2 rounded-full ${badges[0].color.split(" ")[0]}`}
+                                title={badges[0].label}
+                              />
+                            )}
+                            <button
+                              onClick={handleHide}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-base-200 rounded-full"
+                            >
+                              <EyeOff size={12} className="opacity-50" />
+                            </button>
+                          </div>
+                          {/* Inline Badge Descriptions */}
+                          {badges.length > 0 && (
+                            <div className="flex flex-col gap-0.5 mt-1">
+                              {badges.map((b) => (
+                                <div key={b.id} className="text-[11px] opacity-70 leading-tight flex items-start gap-1">
+                                  {b.icon}
+                                  <span>
+                                    <span className="font-semibold">{b.label}:</span>{" "}
+                                    <span className="opacity-80">{b.description}</span>
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Volume Bar */}
+                      <div className="col-span-3">
+                        <div className="flex justify-between text-[10px] mb-1 font-bold">
+                          <span>{p.msgCount.toLocaleString()}</span>
+                          <span className="opacity-40">{p.messageShare.toFixed(0)}%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-base-300/50 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary rounded-full transition-all duration-1000"
+                            style={{ width: `${(p.msgCount / maxMsg) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Speed & Stats */}
+                      <div className="col-span-2 flex flex-col items-center text-xs">
+                        <div className="font-bold whitespace-nowrap" title="Median Reply Time">
+                          {formatDurationHuman(p.medianReplyTime)}
+                        </div>
+                        <div className="text-[10px] opacity-40">yp: {p.yapIndex.toFixed(1)}</div>
+                      </div>
+
+                      {/* Impact Score */}
+                      <div className="col-span-2 text-right">
+                        <div className="inline-flex flex-col">
+                          <span className="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+                            {p.carryScore.toFixed(0)}
+                          </span>
+                          <span className="text-[9px] uppercase font-bold opacity-30">Impact</span>
+                        </div>
                       </div>
                     </div>
                   </motion.div>

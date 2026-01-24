@@ -7,13 +7,15 @@ import { useLiveQuery } from "dexie-react-hooks";
 import Link from "next/link";
 import { format } from "date-fns";
 import { MessageSquare } from "lucide-react";
+import { PageLayout } from "./components/Layout/PageLayout";
+import { Skeleton } from "./components/UI/Skeleton";
 
 export default function Home() {
   const imports = useLiveQuery(() => db.imports.orderBy("importedAt").reverse().toArray());
 
   return (
-    <main className="min-h-screen bg-base-200/50 overflow-y-scroll">
-      <div className="max-w-4xl mx-auto px-4 py-16 space-y-12">
+    <PageLayout maxWidth="4xl">
+      <div className="space-y-12 py-12">
         <div className="text-center space-y-4">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">WhatsApp Insights</h1>
           <p className="text-lg text-base-content/70 max-w-lg mx-auto">
@@ -25,15 +27,15 @@ export default function Home() {
 
         {!imports ? (
           <div className="space-y-4">
-            <div className="h-7 w-32 bg-base-300 rounded animate-pulse mb-4 ml-2" />
+            <Skeleton className="h-7 w-32 mb-4 ml-2" />
             <div className="grid gap-4">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="card bg-base-100 border border-base-300 h-24 p-4">
                   <div className="flex items-center gap-4 h-full">
-                    <div className="h-12 w-12 rounded-xl bg-base-300 animate-pulse" />
+                    <Skeleton variant="rectangular" className="h-12 w-12 rounded-xl" />
                     <div className="flex-1 space-y-2">
-                      <div className="h-5 w-48 bg-base-300 rounded animate-pulse" />
-                      <div className="h-4 w-32 bg-base-300 rounded animate-pulse" />
+                      <Skeleton className="h-5 w-48" />
+                      <Skeleton className="h-4 w-32" />
                     </div>
                   </div>
                 </div>
@@ -79,6 +81,6 @@ export default function Home() {
           </button>
         </div>
       </div>
-    </main>
+    </PageLayout>
   );
 }

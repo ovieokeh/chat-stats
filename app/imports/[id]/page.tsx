@@ -19,6 +19,7 @@ import { ParticipantVisibilityModal } from "../../components/Dashboard/Participa
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { extractTopics, getTzMetadata } from "../../lib/analysis";
+import { PageLayout } from "../../components/Layout/PageLayout";
 
 const COMMON_BOTS = ["Meta AI", "WhatsApp"];
 
@@ -322,15 +323,19 @@ export default function ImportDashboard() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-base-100">
-      <Navbar
-        filename={importRecord.filename}
-        importedAt={importRecord.importedAt}
-        onSettingsClick={() => setIsConfigOpen(true)}
-      />
-
-      <main className="flex-1 overflow-y-auto w-full max-w-6xl mx-auto px-4 md:px-6 py-6 pb-20">
-        <div className="flex flex-col gap-6">
+    <div className="h-full bg-base-100">
+      <PageLayout
+        maxWidth="6xl"
+        preserveScroll={true}
+        header={
+          <Navbar
+            filename={importRecord.filename}
+            importedAt={importRecord.importedAt}
+            onSettingsClick={() => setIsConfigOpen(true)}
+          />
+        }
+      >
+        <div className="flex flex-col gap-6 pb-20">
           <div role="tablist" className="tabs tabs-boxed bg-base-200/50 p-1 inline-block w-fit">
             {["overview", "moments", "sessions", "history"].map((t) => (
               <a
@@ -401,7 +406,7 @@ export default function ImportDashboard() {
             )}
           </div>
         </div>
-      </main>
+      </PageLayout>
 
       <AnalysisConfigModal
         isOpen={isConfigOpen}

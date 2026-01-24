@@ -54,7 +54,7 @@ export default function MomentDetailsPage() {
   }
 
   return (
-    <main className="max-w-6xl mx-auto px-4 md:px-6 py-8 space-y-8 pb-32 h-screen flex flex-col">
+    <main className="max-w-6xl mx-auto px-4 md:px-6 py-8 space-y-8 pb-32 lg:h-screen min-h-screen flex flex-col lg:overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-4 shrink-0">
         <button onClick={() => router.back()} className="btn btn-circle btn-ghost" title="Go Back">
@@ -76,9 +76,9 @@ export default function MomentDetailsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:flex-1 lg:min-h-0">
         {/* Sidebar: Moment Card + Context */}
-        <div className="space-y-6 lg:col-span-1 overflow-y-auto pr-2">
+        <div className="space-y-6 lg:col-span-1 lg:overflow-y-auto pr-2">
           <MomentCard moment={moment} className="shadow-lg border-primary/20" />
 
           <div className="card bg-base-100 border border-base-300/60 p-6">
@@ -104,18 +104,13 @@ export default function MomentDetailsPage() {
         </div>
 
         {/* Main: Chat Wrapper focused on time */}
-        <div className="lg:col-span-2 flex flex-col min-h-0 bg-base-100 rounded-2xl border border-base-300/60 shadow-xl overflow-hidden">
-          <div className="p-4 border-b border-base-300/60 bg-base-100 z-10">
+        <div className="lg:col-span-2 flex flex-col min-h-0 bg-base-100 rounded-2xl border border-base-300/60 shadow-xl overflow-hidden relative">
+          <div className="p-4 border-b border-base-300/60 bg-base-100 z-10 shrink-0">
             <h3 className="font-semibold text-sm uppercase tracking-wide opacity-70">Conversation History</h3>
           </div>
-          <div className="flex-1 min-h-0 relative">
+          <div className="relative h-[600px] lg:h-auto lg:flex-1 lg:min-h-0">
             {/* Reuse ChatViewer but pass initial timestamp */}
             <div className="absolute inset-0">
-              {/* ChatViewer has its own card styling which we might want to override or just nest. 
-                           The ChatViewer creates a fixed height card. simpler to just let it render. 
-                           actually ChatViewer has "h-[600px]". We might want to make it flexible.
-                           For now, let it be.
-                       */}
               <ChatViewer
                 importId={importId}
                 initialScrollToTimestamp={moment.ts}
