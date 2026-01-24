@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import { MessageSquare, Zap, Timer, UserPlus, EyeOff } from "lucide-react";
+import { MessageSquare, Zap, UserPlus, EyeOff, Ghost } from "lucide-react";
 import { formatDurationHuman } from "../../lib/format";
 import { Skeleton } from "../UI/Skeleton";
 import { usePrivacy } from "../../context/PrivacyContext";
 import { obfuscateName } from "../../lib/utils";
-import { Crown, Moon, Sun, FastForward, Ghost, Copy, TrendingUp } from "lucide-react";
+import { Crown, FastForward, Copy, TrendingUp } from "lucide-react";
 import { db } from "../../lib/db";
 import { motion } from "framer-motion";
 
@@ -105,10 +105,6 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
         icon: <UserPlus size={12} />,
         color: "bg-info text-info-content",
       });
-    if (isTop("nightOwlCount"))
-      badges.push({ id: "owl", label: "Night Owl", icon: <Moon size={12} />, color: "bg-indigo-500 text-white" });
-    if (isTop("earlyBirdCount"))
-      badges.push({ id: "bird", label: "Early Bird", icon: <Sun size={12} />, color: "bg-amber-400 text-amber-900" });
     if (isTop("ghostCount"))
       badges.push({ id: "ghost", label: "Ghost", icon: <Ghost size={12} />, color: "bg-slate-600 text-white" });
     if (isTop("doubleTextCount"))
@@ -243,14 +239,14 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                   </div>
                 </div>
 
-                {/* Kept you waiting */}
-                <div className="flex-1 bg-error/5 border border-error/10 rounded-2xl p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center">
-                    <Timer size={18} className="text-error" />
+                {/* Ghost Count */}
+                <div className="flex-1 bg-base-200/50 border border-base-200 rounded-2xl p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-600/20 flex items-center justify-center">
+                    <Ghost size={18} className="text-slate-500" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase opacity-50 block">Kept you waiting</span>
-                    <span className="text-lg font-black text-error">{formatDurationHuman(p.secondsKeptWaiting)}</span>
+                    <span className="text-[10px] font-bold uppercase opacity-50 block">Ghosted (12h+)</span>
+                    <span className="text-lg font-black">{p.ghostCount}x</span>
                   </div>
                 </div>
               </div>

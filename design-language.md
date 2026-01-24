@@ -1,355 +1,456 @@
-# design-language.md
+# Design Language
 
-Visual system + component language for a WhatsApp Chat Insights Dashboard  
-Optimized for **Tailwind CSS + daisyUI** and **social-media-friendly visuals** (TikTok/IG Reels thumbnails, screen recordings, shareable cards).
-
----
-
-## 0) Design goals
-
-1. **Instantly legible**: numbers and trends readable at a glance on mobile.
-2. **Shareable**: every insight can render as a “card” that looks good in a vertical video crop.
-3. **Low-noise**: minimal chrome, high contrast, generous spacing.
-4. **Explainable**: every chart/card includes a one-line “why this matters”.
-5. **Consistent**: all spacing, radius, typography, and color tokens come from a small set.
+**WhatsApp Chat Insights Dashboard**  
+A visual system built for virality, not mediocrity.
 
 ---
 
-## 1) Overall aesthetic
+## The Vision
 
-**“Data-gloss”**: clean surfaces, soft shadows, sharp type, playful accents.
+> **One glance. One emotion. One share.**
 
-- Backgrounds: deep neutral or subtle gradient
-- Cards: elevated, slightly glossy, crisp borders
-- Accents: neon-ish but controlled (use theme tokens; avoid rainbow chaos)
-- Motion: micro-animations only (hover, focus, subtle enter)
+This isn't a dashboard. It's a conversation piece. Every screen should make someone pause their scroll, screenshot, and send to a friend with "look at this."
 
----
-
-## 2) DaisyUI theme strategy
-
-Use daisyUI themes + allow user switching. Provide at least 3 curated presets:
-
-### Theme presets
-
-1. **Midnight Studio** (default)
-   - background: near-black
-   - card surface: dark slate
-   - accent: electric cyan / violet
-2. **Paper Lab**
-   - background: warm off-white
-   - card: white
-   - accent: deep blue / emerald
-3. **Candy Neon**
-   - background: very dark
-   - card: dark
-   - accent: hot pink / lime (sparingly)
-
-Implementation:
-
-- Use daisyUI `data-theme` on `html`.
-- Keep custom colors minimal; rely on `bg-base-*`, `text-base-content`, `primary`, `secondary`, `accent`.
+**We're building for the 3-second attention span.**
 
 ---
 
-## 3) Layout system
+## Aesthetic Direction: Neo-Editorial
 
-### Viewport-first
+Clean like a magazine spread. Bold like a poster. Personal like a love letter.
 
-- Primary layout is **12-col grid** on desktop, **single-column** on mobile.
-- **Vertical video mode**: dedicated “Share Card” view that renders in 9:16.
+| Principle    | Expression                                          |
+| ------------ | --------------------------------------------------- |
+| **Contrast** | Massive numbers against whisper-quiet backgrounds   |
+| **Tension**  | Sharp geometric layouts with organic accent moments |
+| **Intimacy** | Data that feels like it knows you                   |
+| **Drama**    | Every insight earns its space on screen             |
 
-### Page container
+This is NOT:
 
-- `max-w-6xl mx-auto px-4 md:px-6`
-- Section spacing: `space-y-6 md:space-y-8`
-
-### Grid patterns
-
-- KPI row: `grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4`
-- Main dashboard: `grid grid-cols-1 lg:grid-cols-12 gap-4`
-  - Main: `lg:col-span-8`
-  - Side: `lg:col-span-4`
-
----
-
-## 4) Spacing & radii tokens (hard rules)
-
-### Spacing
-
-- Card padding:
-  - small: `p-4`
-  - default: `p-5 md:p-6`
-- Card stack spacing: `gap-3 md:gap-4`
-- Internal element spacing: `space-y-2` for dense; `space-y-3` for default
-
-### Radius
-
-- Standard card: `rounded-2xl`
-- “Hero” share cards: `rounded-3xl`
-- Chips/badges: `rounded-full`
-
-### Borders & shadows
-
-- Default border: `border border-base-300/60`
-- Elevated: `shadow-lg shadow-black/10` (dark theme) or `shadow-xl shadow-black/5` (light)
-- Glow accents (sparingly): `ring-1 ring-primary/20` + `shadow-[0_0_40px_-20px] shadow-primary/40`
+- ❌ Corporate dashboard gray
+- ❌ SaaS template energy
+- ❌ "Clean and professional"
+- ❌ Forgettable
 
 ---
 
-## 5) Typography scale (TikTok-readable)
+## Typography: The Star of the Show
 
-Use big numbers and short labels.
+### Font Stack
 
-### Font choices
+```css
+--font-display: "Satoshi", "Cabinet Grotesk", sans-serif;
+--font-body: "General Sans", "Switzer", sans-serif;
+--font-mono: "JetBrains Mono", "SF Mono", monospace;
+```
 
-- Use system font stack (fast) or a clean variable font.
-- Numbers: use `tabular-nums` for alignment.
+**Never use**: Inter, Roboto, Arial, system-ui as display fonts. They are invisible.
 
-### Scale
+### Scale (Viewport-Responsive)
 
-- Page title: `text-2xl md:text-3xl font-semibold tracking-tight`
-- Section title: `text-lg md:text-xl font-semibold`
-- KPI value: `text-3xl md:text-4xl font-semibold tabular-nums`
-- KPI label: `text-xs md:text-sm text-base-content/70`
-- Card headline: `text-base md:text-lg font-semibold`
-- Body: `text-sm md:text-base text-base-content/80`
-- Microcopy: `text-xs text-base-content/60`
+| Role              | Mobile | Desktop | Weight |
+| ----------------- | ------ | ------- | ------ |
+| **Hero Stat**     | 72px   | 120px   | 700    |
+| **Card Stat**     | 48px   | 64px    | 600    |
+| **Section Title** | 24px   | 32px    | 600    |
+| **Card Label**    | 14px   | 16px    | 500    |
+| **Body**          | 15px   | 17px    | 400    |
+| **Caption**       | 12px   | 13px    | 400    |
 
-**Rule**: Any card intended for social sharing must have:
+**Rules**:
 
-- Value ≥ `text-4xl` on desktop
-- Headline ≤ 6 words
-- Subtitle ≤ 90 characters
-
----
-
-## 6) Component library (design rules + Tailwind/daisyUI recipes)
-
-### 6.1 Insight Card (primary share unit)
-
-**Purpose**: one insight, one chart (optional), one punchline.
-
-**Structure**
-
-- Top: icon + label
-- Middle: huge stat
-- Bottom: delta + explanation
-- Optional: micro sparkline
-
-**Classes (baseline)**
-
-- Container: `card bg-base-100 border border-base-300/60 rounded-3xl shadow-xl`
-- Body: `card-body p-6 gap-4`
-- Header row: `flex items-center justify-between`
-- Stat: `text-4xl md:text-5xl font-semibold tabular-nums leading-none`
-- Explanation: `text-sm text-base-content/70`
-
-**Variants**
-
-- `card--glow`: `ring-1 ring-primary/20 shadow-[0_0_50px_-25px] shadow-primary/50`
-- `card--danger`: use `text-error` + `ring-error/20`
-- `card--success`: use `text-success` + `ring-success/20`
-
-**Example content guidance**
-
-- Title: “Median reply time”
-- Value: “3m 12s”
-- Delta: “↓ 22% this month”
-- Why: “Faster replies correlate with higher session continuity.”
+- Numbers use `font-feature-settings: 'tnum'` (tabular)
+- Tracking: tight on headlines (-0.02em), loose on small caps (+0.05em)
+- Line height: 1.1 for stats, 1.5 for body
 
 ---
 
-### 6.2 KPI Tile (dense grid)
+## Color: Intentional Palettes
 
-**Purpose**: quick metric scan
+Three modes. Each with character.
 
-**Classes**
+### Obsidian (Default Dark)
 
-- `card bg-base-100 border border-base-300/60 rounded-2xl`
-- `card-body p-4 md:p-5`
-- Value: `text-2xl md:text-3xl font-semibold tabular-nums`
-- Label: `text-xs md:text-sm text-base-content/60`
+```css
+--bg-primary: hsl(240 10% 6%); /* near-black with warmth */
+--bg-card: hsl(240 8% 10%); /* elevated dark */
+--bg-hover: hsl(240 8% 13%); /* interaction state */
 
-**Optional trend pill**
+--text-primary: hsl(0 0% 98%); /* bright white */
+--text-secondary: hsl(240 5% 65%); /* soft gray */
+--text-muted: hsl(240 5% 45%); /* receded */
 
-- `badge badge-sm badge-outline` + `text-success`/`text-error`
+--accent: hsl(165 80% 55%); /* mint electric */
+--accent-glow: hsl(165 80% 55% / 0.3);
 
----
+--success: hsl(145 65% 50%);
+--danger: hsl(0 72% 60%);
+--warning: hsl(35 90% 55%);
+```
 
-### 6.3 Chart Card
+### Bone (Light Mode)
 
-**Rules**
+```css
+--bg-primary: hsl(40 30% 96%); /* warm cream */
+--bg-card: hsl(0 0% 100%); /* pure white cards */
 
-- Chart must fill width and have large axis labels.
-- Avoid legends when possible; use inline labels.
-- Always include a text “takeaway”.
+--text-primary: hsl(240 10% 8%); /* rich black */
+--accent: hsl(250 80% 55%); /* royal violet */
+```
 
-**Classes**
+### Ember (Statement Mode)
 
-- `card bg-base-100 border border-base-300/60 rounded-2xl`
-- Header: `card-title text-base md:text-lg`
-- Chart area: `h-48 md:h-64`
-- Takeaway: `text-sm text-base-content/70`
+```css
+--bg-primary: hsl(0 0% 3%); /* void black */
+--accent: hsl(15 100% 55%); /* fire orange */
+```
 
----
-
-### 6.4 “Moment” Card (feed item)
-
-**Purpose**: highlight anomalies and interesting events.
-
-**Visual**
-
-- Left rail accent (gradient bar)
-- Time + trigger reason + preview
-
-**Classes**
-
-- Container: `card bg-base-100 border border-base-300/60 rounded-2xl`
-- Body: `card-body p-5`
-- Rail: `before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:rounded-l-2xl before:bg-primary/60`
-- Title: `font-semibold`
-- Meta: `text-xs text-base-content/60`
+**Rule**: Cards float. Background recedes. Accents punctuate.
 
 ---
 
-### 6.5 Filter Bar (powerful but clean)
+## Spatial System
 
-**Rules**
+### The Grid
 
-- Filters should look like controls on a DJ deck: compact, tactile.
-- Keep height consistent: `h-10`.
+```
+Desktop: 12-column, 24px gutter
+Tablet: 8-column, 20px gutter
+Mobile: 4-column, 16px gutter
+```
 
-**Elements**
+### Section Rhythm
 
-- Date range: `input input-bordered h-10`
-- Participant multi-select: `select select-bordered h-10`
-- Toggles: `toggle toggle-sm`
-- Presets: `btn btn-sm btn-ghost`
+```css
+--section-gap: clamp(48px, 8vw, 96px);
+--card-gap: clamp(12px, 2vw, 20px);
+```
 
----
+### Card Padding
 
-### 6.6 Badge + Chip language
+| Size       | Padding                    |
+| ---------- | -------------------------- |
+| Compact    | 16px                       |
+| Default    | 24px                       |
+| Hero       | 32px mobile / 48px desktop |
+| Share Card | 64px                       |
 
-Use badges to encode meaning:
+### Radius Scale
 
-- `badge badge-outline` for neutral labels
-- `badge badge-primary` for highlighted
-- `badge badge-success/error/warning` for sentiment or anomalies
-
-**Rule**: maximum 3 badges per card.
-
----
-
-## 7) Color & semantic mapping (no arbitrary colors)
-
-Use semantic tokens:
-
-- Positive: `text-success` / `badge-success`
-- Negative: `text-error` / `badge-error`
-- Warning: `text-warning`
-- Info: `text-info`
-- Accent: `text-primary` or `text-secondary` (pick one per view)
-
-### Participant colors
-
-Do NOT assign random bright colors.
-
-- Choose from a fixed palette of 8 theme-aligned colors.
-- Ensure contrast against `bg-base-100`.
-- Always show participant name next to color (never color alone).
+```css
+--radius-sm: 8px; /* chips, badges */
+--radius-md: 16px; /* standard cards */
+--radius-lg: 24px; /* feature cards */
+--radius-xl: 32px; /* hero/share cards */
+--radius-pill: 999px;
+```
 
 ---
 
-## 8) Social / TikTok “Share Mode”
+## Components
 
-### Requirements
+### Insight Card (The Star)
 
-- 9:16 canvas export (1080×1920 default).
-- High contrast, huge stat, minimal clutter.
-- Include small watermark/app name in corner.
-- No scroll required; one insight per screen.
+A single truth, beautifully told.
 
-### Share Card Layout
+```
+┌─────────────────────────────────────┐
+│  📊  Reply Speed                    │
+│                                     │
+│         3m 12s                      │
+│                                     │
+│  ↓ 22% faster than last month      │
+│  ─────────────────── (sparkline)   │
+│                                     │
+│  "You're getting snappier."        │
+└─────────────────────────────────────┘
+```
 
-- Top: app + chat name (small)
-- Middle: big stat + micro chart
-- Bottom: “why it matters” + date range label
+**Anatomy**:
 
-### Tailwind sizing
+1. **Icon + Label**: Top-left, understated
+2. **Hero Value**: Centered, massive, magnetic
+3. **Trend Indicator**: Direction + delta + timeframe
+4. **Mini Viz**: Optional sparkline or progress bar
+5. **Insight Line**: One-sentence human takeaway (italic, softer)
 
-- Wrapper: `w-[1080px] h-[1920px] p-16 bg-base-200`
-- Card: `rounded-[48px] p-12 shadow-2xl`
-- Stat: `text-7xl font-semibold`
+**Styling**:
 
-### Export
+```css
+.insight-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  box-shadow:
+    0 1px 2px hsl(0 0% 0% / 0.05),
+    0 8px 32px hsl(0 0% 0% / 0.08);
+  border: 1px solid hsl(0 0% 100% / 0.06);
+}
 
-- Provide “Copy as image” (client-side canvas render) OR “Download PNG”.
-- Allow toggles:
-  - show/hide names (redaction)
-  - show/hide message previews
-  - theme selection for export
-
----
-
-## 9) Motion & interaction
-
-- Use daisyUI + Tailwind transitions only (no heavy animation libs required).
-- Hover: `hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200`
-- Focus: visible rings: `focus:outline-none focus:ring-2 focus:ring-primary/40`
-- Loading states: skeletons (`skeleton h-... w-...`)
-
-**Rule**: animations must never distract from reading numbers.
-
----
-
-## 10) Iconography
-
-- Use `lucide-react`
-- Icon size:
-  - cards: `w-5 h-5`
-  - share cards: `w-7 h-7`
-- Icons always accompany text labels (no icon-only semantics).
+.insight-card--glow {
+  box-shadow:
+    0 0 0 1px var(--accent-glow),
+    0 0 60px -20px var(--accent);
+}
+```
 
 ---
 
-## 11) Data formatting rules
+### KPI Strip
 
-- Always show:
-  - date range in the card footer (e.g., “Jan 2024 – Mar 2024”)
-  - units (mins, hours, msgs/day)
-- Use friendly rounding:
-  - reply times: nearest second under 1m, nearest 5s under 5m, nearest 1m above 5m
-  - counts: abbreviate (1.2k) only in share mode
+Horizontal scan of key metrics. Dense but clear.
 
----
+```
+┌────────┬────────┬────────┬────────┐
+│ 12.4k  │  847   │  3:42  │  89%   │
+│messages│ media  │  avg   │ active │
+└────────┴────────┴────────┴────────┘
+```
 
-## 12) Empty, error, and privacy states
+**Rules**:
 
-### Empty state
-
-- One illustration (simple), one line, one CTA.
-- Tone: playful but direct.
-
-### Error state
-
-- Show where parsing failed and allow “download diagnostics”.
-- Provide “Try alternate date format” button.
-
-### Privacy mode (global toggle)
-
-- Replace names with “Participant A/B”
-- Hide message text (show only counts)
-- Blur previews in moment cards
+- All tiles same height
+- Value always larger than label
+- Monospace numbers
+- Subtle dividers, not borders
 
 ---
 
-## 13) Implementation checklist (for AI dev)
+### Chart Card
 
-- [ ] Create `components/ui/InsightCard.tsx`, `KpiTile.tsx`, `ChartCard.tsx`, `MomentCard.tsx`, `FilterBar.tsx`
-- [ ] Create `lib/format.ts` (numbers, times, ranges)
-- [ ] Add `ShareMode` route that renders at 1080×1920
-- [ ] Add theme switcher (daisyUI `data-theme`)
-- [ ] Add privacy toggle that affects all renderers
-- [ ] Ensure mobile-first readability (test at 375px width)
-- [ ] Ensure “share” layout works in 9:16 crop
+Data visualization with narrative.
+
+**Rules**:
+
+1. No chart legends—inline labels only
+2. One color per data series (use opacity for secondary)
+3. Large axis labels (min 12px)
+4. Always include a text takeaway below
+5. Generous whitespace around chart area
+
+**Chart Aesthetic**:
+
+- Line charts: 2.5px stroke, subtle glow on accent lines
+- Bar charts: Rounded tops (4px radius)
+- Area charts: Gradient fill fading to transparent
+- No gridlines darker than 8% opacity
+
+---
+
+### Moment Card
+
+Highlighted events and anomalies.
+
+```
+┌─────────────────────────────────────┐
+│ ◆ Peak Activity Detected           │
+│ Jan 14, 2024 · 11:34 PM            │
+│                                     │
+│ 847 messages in one hour.          │
+│ That's 12x your daily average.     │
+│                                     │
+│ "Someone had a lot to say."        │
+└─────────────────────────────────────┘
+```
+
+**Styling**:
+
+- Left accent bar (4px, gradient)
+- Subtle background tint matching accent
+- Icon: filled diamond or custom per event type
+
+---
+
+### Share Card (9:16 Export)
+
+The viral unit. One insight, perfectly framed for stories.
+
+**Canvas**: 1080 × 1920px
+
+```
+┌─────────────────────────────────────┐
+│                                     │
+│         (app logo, subtle)          │
+│                                     │
+│                                     │
+│                                     │
+│           12,847                    │
+│          messages                   │
+│                                     │
+│    ════════════════════════         │
+│    (mini chart or accent line)      │
+│                                     │
+│   "That's a novel's worth of        │
+│    conversation."                   │
+│                                     │
+│                                     │
+│         Jan 2024 – Mar 2024         │
+│           (chat name)               │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**Requirements**:
+
+- Value: 120px+ font size
+- Maximum 6 words in headline
+- High contrast (WCAG AAA for story overlays)
+- Subtle branding in corner
+- Optional: show/hide names toggle for privacy
+
+---
+
+## Motion
+
+Motion serves meaning. Never decoration.
+
+### Timing Functions
+
+```css
+--ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+--ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+--spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+```
+
+### Interactions
+
+| Trigger         | Animation                                 |
+| --------------- | ----------------------------------------- |
+| Card hover      | translateY(-2px), shadow intensify, 200ms |
+| Card press      | scale(0.98), 100ms                        |
+| Number count-up | 600ms ease-out                            |
+| Chart reveal    | Draw-in from left, 800ms                  |
+| Page enter      | Stagger children 50ms, fade + rise        |
+
+### Rules
+
+- Never animate while user is reading numbers
+- Respect `prefers-reduced-motion`
+- Loading: use skeleton shapes, not spinners
+
+---
+
+## Iconography
+
+Use **Lucide** or **Phosphor** icons.
+
+| Context          | Size |
+| ---------------- | ---- |
+| Inline with text | 16px |
+| Card headers     | 20px |
+| Feature callouts | 24px |
+| Share cards      | 32px |
+
+**Rules**:
+
+- Icons accompany labels (never standalone for meaning)
+- Stroke width: 1.5px for light icons, 2px for bold
+- Tint icons with `currentColor` to match text
+
+---
+
+## Data Display Rules
+
+### Number Formatting
+
+| Type           | Format          | Example  |
+| -------------- | --------------- | -------- |
+| Duration < 1m  | seconds         | "47s"    |
+| Duration 1-60m | min:sec         | "3:42"   |
+| Duration > 1h  | hours, mins     | "2h 15m" |
+| Counts < 10k   | full number     | "8,472"  |
+| Counts ≥ 10k   | abbreviated     | "12.4k"  |
+| Percentages    | one decimal max | "73.2%"  |
+
+### Context Requirements
+
+Every stat must show:
+
+- **Unit** (messages, hours, replies)
+- **Timeframe** (date range)
+- **Comparison** when relevant (vs last period)
+
+---
+
+## States
+
+### Empty
+
+- Friendly illustration (hand-drawn style)
+- One-line explanation
+- Single CTA button
+- Tone: helpful, not sad
+
+### Loading
+
+- Skeleton cards matching final layout
+- Subtle shimmer animation
+- No spinners, no "Loading..."
+
+### Error
+
+- Clear error message (not technical)
+- Suggested action button
+- Option to download debug info
+
+### Privacy Mode
+
+- Names → "Person A", "Person B"
+- Messages → redacted or hidden
+- Previews → blurred
+- Global toggle, persisted in settings
+
+---
+
+## Implementation Notes
+
+### CSS Architecture
+
+```
+styles/
+├── tokens.css      # All custom properties
+├── reset.css       # Minimal reset
+├── typography.css  # Type scale + utilities
+├── components/     # Component-specific styles
+└── themes/         # Color mode overrides
+```
+
+### Component Files
+
+```
+components/
+├── InsightCard.tsx
+├── KpiStrip.tsx
+├── ChartCard.tsx
+├── MomentCard.tsx
+├── ShareCard.tsx
+├── FilterBar.tsx
+└── ThemeToggle.tsx
+```
+
+### Critical Paths
+
+- [ ] `InsightCard` with glow variant
+- [ ] `ShareCard` with 9:16 canvas export
+- [ ] Theme switcher (3 modes)
+- [ ] Privacy toggle affecting all views
+- [ ] Number formatting utilities
+- [ ] Skeleton loading states
+
+---
+
+## The Litmus Test
+
+Before shipping any screen, ask:
+
+1. **Would I screenshot this?**
+2. **Can I read the main number in 0.5 seconds?**
+3. **Does it feel like something I haven't seen before?**
+4. **Would this look good in a TikTok?**
+
+If any answer is "no"—iterate.
+
+---
+
+_Remember: We're not building a tool. We're building something people want to show off._

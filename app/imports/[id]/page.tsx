@@ -99,7 +99,7 @@ export default function ImportDashboard() {
     const hiddenParticipantIds = new Set(
       participants
         .filter((p) => p.isHidden || COMMON_BOTS.some((bot) => p.displayName.toLowerCase().includes(bot.toLowerCase())))
-        .map((p) => p.id)
+        .map((p) => p.id),
     );
 
     const messages = allMessages.filter((m) => !m.senderId || !hiddenParticipantIds.has(m.senderId));
@@ -135,7 +135,7 @@ export default function ImportDashboard() {
         .map(() =>
           Array(24)
             .fill(0)
-            .map(() => ({ count: 0, replyDeltas: [], medianReplySeconds: 0 }))
+            .map(() => ({ count: 0, replyDeltas: [], medianReplySeconds: 0 })),
         );
 
     heatmaps["all"] = initGrid();
@@ -209,7 +209,7 @@ export default function ImportDashboard() {
     const hiddenParticipantIds = new Set(
       participants
         .filter((p) => p.isHidden || COMMON_BOTS.some((bot) => p.displayName.toLowerCase().includes(bot.toLowerCase())))
-        .map((p) => p.id)
+        .map((p) => p.id),
     );
 
     const messages = allMessages.filter((m) => !m.senderId || !hiddenParticipantIds.has(m.senderId));
@@ -243,7 +243,7 @@ export default function ImportDashboard() {
 
     const visibleParticipantIds = new Set(participants.filter((p) => !p.isHidden && !p.isSystem).map((p) => p.id));
     const totalVisibleInitiations = sessions.filter(
-      (s) => s.initiatorId && visibleParticipantIds.has(s.initiatorId)
+      (s) => s.initiatorId && visibleParticipantIds.has(s.initiatorId),
     ).length;
 
     return participants
@@ -335,7 +335,7 @@ export default function ImportDashboard() {
       <main className="flex-1 overflow-y-auto w-full max-w-6xl mx-auto px-4 md:px-6 py-6 pb-20">
         <div className="flex flex-col gap-6">
           <div role="tablist" className="tabs tabs-boxed bg-base-200/50 p-1 inline-block w-fit">
-            {["overview", "sessions", "moments", "leaderboard", "history"].map((t) => (
+            {["overview", "moments", "leaderboard", "sessions", "history"].map((t) => (
               <a
                 key={t}
                 role="tab"

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MessageSquare, FastForward, UserPlus, Moon, Sun, Ghost, Copy, TrendingUp, Share2 } from "lucide-react";
+import { MessageSquare, FastForward, UserPlus, TrendingUp, Share2 } from "lucide-react";
 import { formatDurationHuman } from "../../lib/format";
 import { usePrivacy } from "../../context/PrivacyContext";
 import { obfuscateName } from "../../lib/utils";
@@ -74,42 +74,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ participants }) => {
       format: (val: number) => `${val.toFixed(1)}%`,
       metric: "rate",
       sort: (a: Participant, b: Participant) => b.initiationRate - a.initiationRate,
-    },
-    {
-      title: "The Night Owl",
-      description: "Most messages (12AM - 5AM)",
-      icon: <Moon className="w-5 h-5 text-indigo-400" />,
-      getValue: (p: Participant) => p.nightOwlCount,
-      format: (val: number) => val.toLocaleString(),
-      metric: "msgs",
-      sort: (a: Participant, b: Participant) => b.nightOwlCount - a.nightOwlCount,
-    },
-    {
-      title: "The Early Bird",
-      description: "Most messages (5AM - 9AM)",
-      icon: <Sun className="w-5 h-5 text-yellow-500" />,
-      getValue: (p: Participant) => p.earlyBirdCount,
-      format: (val: number) => val.toLocaleString(),
-      metric: "msgs",
-      sort: (a: Participant, b: Participant) => b.earlyBirdCount - a.earlyBirdCount,
-    },
-    {
-      title: "The Ghost",
-      description: "Most 12h+ reply gaps",
-      icon: <Ghost className="w-5 h-5 text-base-content/40" />,
-      getValue: (p: Participant) => p.ghostCount,
-      format: (val: number) => val.toLocaleString(),
-      metric: "times",
-      sort: (a: Participant, b: Participant) => b.ghostCount - a.ghostCount,
-    },
-    {
-      title: "The Double-Texter",
-      description: "Most consecutive messages",
-      icon: <Copy className="w-5 h-5 text-orange-400" />,
-      getValue: (p: Participant) => p.doubleTextCount,
-      format: (val: number) => val.toLocaleString(),
-      metric: "times",
-      sort: (a: Participant, b: Participant) => b.doubleTextCount - a.doubleTextCount,
     },
   ];
 

@@ -3,7 +3,7 @@
 import React from "react";
 import { OverviewHero } from "./OverviewHero";
 import { ChartCard } from "../UI/ChartCard";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, AreaChart, Area, CartesianGrid } from "recharts";
+import { ResponsiveContainer, XAxis, Tooltip, AreaChart, Area, CartesianGrid } from "recharts";
 import { formatNumber } from "../../lib/format";
 
 import { Heatmap } from "./Heatmap";
@@ -175,67 +175,41 @@ export const Overview: React.FC<OverviewProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ChartCard title="Message Volume" takeaway="Visualize the ebb and flow of conversation over time.">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={timelineData}>
-              <defs>
-                <linearGradient id="colorMsgs" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.1} />
-                  <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.1} />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 12, opacity: 0.5 }}
-                tickLine={false}
-                axisLine={false}
-                minTickGap={30}
-              />
-              <Area
-                type="monotone"
-                dataKey="messages"
-                stroke="currentColor"
-                strokeWidth={2}
-                className="text-primary"
-                fill="url(#colorMsgs)"
-              />
-              <Tooltip
-                contentStyle={{
-                  borderRadius: "12px",
-                  border: "none",
-                  boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard title="Activity by Hour" takeaway="Peak activity times usually indicate free time overlap.">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={hourlyData}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.1} />
-              <XAxis
-                dataKey="hour"
-                tick={{ fontSize: 12, opacity: 0.5 }}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(val) => `${val}:00`}
-              />
-              <Tooltip
-                cursor={{ fill: "var(--base-200)", opacity: 0.3 }}
-                contentStyle={{
-                  borderRadius: "12px",
-                  border: "none",
-                  boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                }}
-              />
-              <Bar dataKey="count" fill="currentColor" className="text-secondary" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
+      <ChartCard title="Message Volume" takeaway="Visualize the ebb and flow of conversation over time.">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={timelineData}>
+            <defs>
+              <linearGradient id="colorMsgs" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.1} />
+                <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.1} />
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 12, opacity: 0.5 }}
+              tickLine={false}
+              axisLine={false}
+              minTickGap={30}
+            />
+            <Area
+              type="monotone"
+              dataKey="messages"
+              stroke="currentColor"
+              strokeWidth={2}
+              className="text-primary"
+              fill="url(#colorMsgs)"
+            />
+            <Tooltip
+              contentStyle={{
+                borderRadius: "12px",
+                border: "none",
+                boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+              }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartCard>
     </div>
   );
 };
