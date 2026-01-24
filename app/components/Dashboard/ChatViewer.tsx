@@ -38,7 +38,7 @@ const HighlightedText: React.FC<{ text: string; highlight: string }> = ({ text, 
           </mark>
         ) : (
           part
-        )
+        ),
       )}
     </>
   );
@@ -160,7 +160,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
       }
       return format(ts, "HH:mm");
     },
-    [timeFormatter]
+    [timeFormatter],
   );
 
   const formatDateHeader = React.useCallback(
@@ -170,7 +170,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
       }
       return format(ts, "EEE, MMM d, yyyy");
     },
-    [dateFormatter]
+    [dateFormatter],
   );
 
   // ... (primary viewer logic) ...
@@ -218,8 +218,8 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
   return (
     <div className="card bg-base-100 border border-base-300/60 shadow-xl rounded-2xl flex flex-col h-full min-h-[500px]">
       {/* ... (Header) ... */}
-      <div className="p-4 border-b border-base-300/60 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <div className="p-4 border-b border-base-300/60 flex flex-col w-full justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 w-full">
           <h3 className="text-lg font-semibold hidden md:block">Message History</h3>
           <div className="flex items-center gap-2">
             <span className="text-xs opacity-60">View as:</span>
@@ -237,8 +237,8 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="relative w-full max-w-[200px]">
+        <div className="flex items-center gap-4 flex-wrap w-full justify-between">
+          <div className="relative grow">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/50" />
             <input
               type="text"
@@ -265,7 +265,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
                   setHasJumped(false); // Reset jump trigger if needed, or maybe not.
                 }}
               >
-                Strict
+                This moment
               </button>
               <button
                 className={`btn btn-xs rounded-md ${
@@ -273,11 +273,11 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
                 }`}
                 onClick={() => {
                   setShowFullHistory(true);
-                  // We should probably jump to the start of the session in full history
+                  // We should probably jump to the start of the moment in full history
                   setHasJumped(false);
                 }}
               >
-                Context
+                Full History
               </button>
             </div>
           )}
@@ -302,7 +302,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
 
         {timeRange && messages && messages.length > 0 && page === 0 && (
           <div className="flex justify-center py-4">
-            <div className="badge badge-soft badge-info gap-2 text-xs font-medium">Start of session view</div>
+            <div className="badge badge-soft badge-info gap-2 text-xs font-medium">Start of moment view</div>
           </div>
         )}
 
@@ -371,7 +371,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
 
         {timeRange && messages && messages.length > 0 && page === totalPages - 1 && (
           <div className="flex justify-center py-4">
-            <div className="badge badge-ghost gap-2 text-xs opacity-70">End of session view</div>
+            <div className="badge badge-soft badge-error gap-2 text-xs opacity-70">End of moment view</div>
           </div>
         )}
       </div>

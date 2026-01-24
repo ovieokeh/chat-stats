@@ -80,7 +80,7 @@ export const Overview: React.FC<OverviewProps> = ({
             tooltip: hasData ? `Median Reply: ${formatDurationHuman(cell.medianReplySeconds)}` : "No replies",
           };
         }
-      })
+      }),
     );
   }, [heatmapData, metric, participantId]);
 
@@ -107,6 +107,7 @@ export const Overview: React.FC<OverviewProps> = ({
         data={{
           stats,
           topics: topics.slice(0, 10),
+          participants,
           chatName: "Chat Overview",
         }}
       />

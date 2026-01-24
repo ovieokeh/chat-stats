@@ -10,7 +10,6 @@ import { ParticipantStats } from "../../components/Dashboard/ParticipantStats";
 import { ChatViewer } from "../../components/Dashboard/ChatViewer";
 import { SessionsList } from "../../components/Dashboard/SessionsList";
 import { MomentsFeed } from "../../components/Dashboard/MomentsFeed";
-import { Leaderboard } from "../../components/Dashboard/Leaderboard";
 import { format } from "date-fns";
 import { Loader2, Users } from "lucide-react";
 import { ExportConfig } from "../../types";
@@ -34,10 +33,7 @@ export default function ImportDashboard() {
 
   // Tab state synced with URL
   const tabParam = searchParams.get("tab");
-  const activeTab =
-    tabParam === "moments" || tabParam === "history" || tabParam === "sessions" || tabParam === "leaderboard"
-      ? tabParam
-      : "overview";
+  const activeTab = tabParam === "moments" || tabParam === "history" || tabParam === "sessions" ? tabParam : "overview";
 
   const setActiveTab = (tab: string) => {
     const newParams = new URLSearchParams(searchParams.toString());
@@ -336,7 +332,7 @@ export default function ImportDashboard() {
       <main className="flex-1 overflow-y-auto w-full max-w-6xl mx-auto px-4 md:px-6 py-6 pb-20">
         <div className="flex flex-col gap-6">
           <div role="tablist" className="tabs tabs-boxed bg-base-200/50 p-1 inline-block w-fit">
-            {["overview", "moments", "leaderboard", "sessions", "history"].map((t) => (
+            {["overview", "moments", "sessions", "history"].map((t) => (
               <a
                 key={t}
                 role="tab"
@@ -389,7 +385,6 @@ export default function ImportDashboard() {
 
             {activeTab === "sessions" && <SessionsList importId={importId} />}
             {activeTab === "moments" && <MomentsFeed importId={importId} />}
-            {activeTab === "leaderboard" && <Leaderboard participants={participantsData || []} />}
             {activeTab === "history" && (
               <ChatViewer
                 importId={importId}

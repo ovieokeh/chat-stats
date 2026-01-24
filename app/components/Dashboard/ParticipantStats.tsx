@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MessageSquare, Zap, UserPlus, EyeOff, Ghost, Clock, HelpCircle } from "lucide-react";
+import { UserPlus, EyeOff, Ghost } from "lucide-react";
 import { formatDurationHuman } from "../../lib/format";
 import { Skeleton } from "../UI/Skeleton";
 import { usePrivacy } from "../../context/PrivacyContext";
@@ -9,17 +9,21 @@ import { obfuscateName } from "../../lib/utils";
 import { Crown, FastForward, Copy, TrendingUp } from "lucide-react";
 import { db } from "../../lib/db";
 import { motion } from "framer-motion";
-
-// Tooltip component for explaining metrics
-const Tooltip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, children }) => (
-  <div className="relative group/tooltip inline-flex items-center">
-    {children}
-    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tooltip:block bg-neutral text-neutral-content text-[10px] px-2 py-1.5 rounded-lg whitespace-nowrap z-20 shadow-lg max-w-[200px] text-center leading-snug">
-      {text}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-neutral" />
-    </div>
-  </div>
-);
+import {
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ResponsiveContainer,
+  Legend,
+  Tooltip as RechartsTooltip,
+  ScatterChart,
+  Scatter,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
 
 interface Participant {
   id: number;
@@ -48,12 +52,163 @@ interface ParticipantStatsProps {
 interface Badge {
   id: string;
   label: string;
+  description: string;
   icon: React.ReactNode;
   color: string;
 }
 
 export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants }) => {
   const { isPrivacyMode } = usePrivacy();
+
+  // --- Data Preparation for Radar Chart ---
+  const radarData = React.useMemo(() => {
+    if (!participants || !participants.length) return [];
+
+    // Find max values for normalization
+    const maxMsg = Math.max(...participants.map((p) => p.msgCount)) || 1;
+    // For speed, lower is better. We need a "slowest" baseline to invert.
+    const maxMedianReply = Math.max(...participants.map((p) => p.medianReplyTime)) || 1;
+    const maxYap = Math.max(...participants.map((p) => p.yapIndex)) || 1;
+    const maxCarry = Math.max(...participants.map((p) => p.carryScore)) || 1;
+
+    // We'll create a data structure where each "subject" (axis) contains value for each participant
+    // However, Recharts Radar usually wants [{ subject: 'Volume', A: 100, B: 50 }, ...]
+
+    // Let's protect against too many participants cluttering the chart.
+    // Maybe take top 5 by volume? Or just show all if < 8.
+    const activeParticipants = participants.slice(0, 10);
+
+    const axes = [
+      {
+        key: "Volume",
+        label: "Volume",
+        description: "Total messages sent",
+        formatter: (val: number) => `${val.toLocaleString()} msgs`,
+      },
+      {
+        key: "Speed",
+        label: "Speed",
+        description: "Median reply time",
+        formatter: (val: number) => formatDurationHuman(val),
+      },
+      {
+        key: "Initiative",
+        label: "Initiative",
+        description: "Conversations started %",
+        formatter: (val: number) => `${val.toFixed(0)}%`,
+      },
+      {
+        key: "Verbosity",
+        label: "Verbosity",
+        description: "Avg words per message",
+        formatter: (val: number) => `${val.toFixed(1)} words/msg`,
+      },
+      {
+        key: "Engagement",
+        label: "Engagement",
+        description: "Impact score (Volume + Intiation)",
+        formatter: (val: number) => val.toFixed(0),
+      },
+    ];
+
+    return axes.map((axis) => {
+      const point: Record<string, string | number> = {
+        subject: axis.label,
+        description: axis.description,
+        fullMark: 100,
+      };
+
+      activeParticipants.forEach((p) => {
+        let val = 0;
+        let rawVal = 0;
+
+        switch (axis.key) {
+          case "Volume":
+            val = (p.msgCount / maxMsg) * 100;
+            rawVal = p.msgCount;
+            break;
+          case "Speed":
+            if (p.medianReplyTime === 0 && p.msgCount > 0)
+              val = 100; // Instant
+            else val = Math.max(0, 100 - (p.medianReplyTime / maxMedianReply) * 100);
+            rawVal = p.medianReplyTime;
+            break;
+          case "Initiative":
+            val = p.initiationRate;
+            rawVal = p.initiationRate;
+            break;
+          case "Verbosity":
+            val = (p.yapIndex / maxYap) * 100;
+            rawVal = p.yapIndex;
+            break;
+          case "Engagement":
+            val = (p.carryScore / maxCarry) * 100;
+            rawVal = p.carryScore;
+            break;
+        }
+        point[p.id] = Math.max(10, Math.round(val)); // Normalized score 0-100
+        point[`${p.id}_raw`] = axis.formatter(rawVal); // Formatted raw string
+        point[`${p.id}_val`] = rawVal; // Numeric raw value for sorting if needed
+      });
+      return point;
+    });
+  }, [participants]);
+
+  // Colors for the chart - we need consistent colors for participants
+  // We can cycle through some nice tailwind-ish hex codes or CSS variables
+  const CHART_COLORS = [
+    "#8884d8", // primary-ish
+    "#82ca9d", // success-ish
+    "#ffc658", // warning-ish
+    "#ff7300", // secondary
+    "#d88484", // error-ish
+    "#84d8ca",
+    "#ca84d8",
+  ];
+
+  const CustomRadarTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      // payload[0].payload contains the data object for this axis (subject, description, and participant values)
+      const data = payload[0].payload;
+
+      // Sort payload by value (descending) to show top rankers first
+      // We need to map the payload items back to participants to get names and raw values
+      const sortedItems = [...payload].sort((a, b) => b.value - a.value);
+
+      return (
+        <div className="bg-neutral/95 backdrop-blur-md text-neutral-content rounded-xl p-4 shadow-xl border border-white/10 text-xs min-w-[200px]">
+          <div className="mb-3 border-b border-white/10 pb-2">
+            <p className="font-black text-sm text-white">{data.subject}</p>
+            <p className="opacity-60 text-[10px] uppercase font-bold tracking-wider">{data.description}</p>
+          </div>
+          <div className="space-y-1.5">
+            {sortedItems.map((item: any) => {
+              // item.dataKey is the participant ID
+              const pId = item.dataKey;
+              // Find raw value from data object
+              const rawValue = data[`${pId}_raw`];
+
+              return (
+                <div key={item.name} className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="font-bold text-gray-200">{item.name}</span>
+                  </div>
+                  <span className="font-mono opacity-80">{rawValue}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // --- End Data Prep ---
 
   if (!participants || participants.length === 0) {
     return (
@@ -72,9 +227,6 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
     );
   }
 
-  // Calculate total messages for share percentage
-  const totalMessages = participants.reduce((acc, p) => acc + p.msgCount, 0);
-
   // Calculate Badges (who is #1 in what)
   const getBadges = (p: Participant): Badge[] => {
     const badges: Badge[] = [];
@@ -92,6 +244,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
       badges.push({
         id: "volume",
         label: "Heavyweight",
+        description: "Most active participant (highest message count)",
         icon: <Crown size={12} />,
         color: "bg-primary text-primary-content",
       });
@@ -99,6 +252,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
       badges.push({
         id: "yap",
         label: "Yap Master",
+        description: "Highest average words per message",
         icon: <TrendingUp size={12} />,
         color: "bg-secondary text-secondary-content",
       });
@@ -106,6 +260,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
       badges.push({
         id: "speed",
         label: "The Flash",
+        description: "Fastest median reply time",
         icon: <FastForward size={12} />,
         color: "bg-success text-success-content",
       });
@@ -113,180 +268,292 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
       badges.push({
         id: "instigator",
         label: "Instigator",
+        description: "Starts the most conversations (highest initiation rate)",
         icon: <UserPlus size={12} />,
         color: "bg-info text-info-content",
       });
     if (isTop("ghostCount"))
-      badges.push({ id: "ghost", label: "Ghost", icon: <Ghost size={12} />, color: "bg-slate-600 text-white" });
+      badges.push({
+        id: "ghost",
+        label: "Ghost",
+        description: "Frequently takes >12 hours to reply",
+        icon: <Ghost size={12} />,
+        color: "bg-slate-600 text-white",
+      });
     if (isTop("doubleTextCount"))
-      badges.push({ id: "copy", label: "Double Texter", icon: <Copy size={12} />, color: "bg-orange-500 text-white" });
+      badges.push({
+        id: "copy",
+        label: "Double Texter",
+        description: "Most likely to send multiple messages in a row",
+        icon: <Copy size={12} />,
+        color: "bg-orange-500 text-white",
+      });
 
     return badges;
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {participants.map((p, index) => {
-        const badges = getBadges(p);
+    <div className="flex flex-col gap-8 w-full max-w-full overflow-hidden">
+      {/* Chart Section */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6 }}
+        className="w-full bg-base-100/50 border border-base-200 rounded-[2.5rem] p-6 lg:p-10 relative overflow-hidden"
+      >
+        {/* Background Decoration */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
 
-        const handleHide = async () => {
-          if (confirm(`Hide ${p.name} from analysis? You can unhide them in settings.`)) {
-            await db.participants.update(p.id, { isHidden: true });
-          }
-        };
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="text-center mb-6">
+            <h3 className="text-2xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              {participants.length > 10 ? "Participation Landscape" : "Chat Persona"}
+            </h3>
+            <p className="text-sm opacity-50">
+              {participants.length > 10 ? "Mapping volume vs responsiveness" : "Comparing communication styles"}
+            </p>
+          </div>
 
-        return (
-          <motion.div
-            key={p.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: index * 0.1 }}
-            className="bg-base-100 border border-base-200 rounded-[2rem] overflow-hidden hover:shadow-xl hover:border-primary/20 transition-all duration-300"
-          >
-            {/* Header with gradient accent */}
-            <div className="relative p-6 pb-4">
-              {/* Subtle gradient background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
+          <div className="w-full h-[350px] md:h-[450px]">
+            <ResponsiveContainer width="100%" height="100%">
+              {participants.length <= 10 ? (
+                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                  <PolarGrid strokeOpacity={0.2} />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: "currentColor", opacity: 0.6, fontSize: 12 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
 
-              <div className="relative flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3 group">
-                  {/* Avatar placeholder with initials */}
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-xl font-black text-white shadow-lg">
-                    {(isPrivacyMode ? "?" : p.name.charAt(0)).toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-black tracking-tight">
-                        {isPrivacyMode ? obfuscateName(p.name) : p.name}
-                      </h3>
-                      <button
-                        onClick={handleHide}
-                        className="btn btn-ghost btn-xs btn-circle opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Hide participant"
-                      >
-                        <EyeOff className="w-3 h-3" />
-                      </button>
-                    </div>
-                    <p className="text-sm opacity-50">{p.messageShare.toFixed(0)}% of all messages</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Badges row */}
-              {badges.length > 0 && (
-                <div className="relative flex flex-wrap gap-1.5 mt-4">
-                  {badges.map((b) => (
-                    <span
-                      key={b.id}
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${b.color}`}
-                    >
-                      {b.icon}
-                      {b.label}
-                    </span>
+                  {/* Render Radar for each participant */}
+                  {participants.slice(0, 10).map((p, i) => (
+                    <Radar
+                      key={p.id}
+                      name={isPrivacyMode ? obfuscateName(p.name) : p.name}
+                      dataKey={p.id}
+                      stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                      fill={CHART_COLORS[i % CHART_COLORS.length]}
+                      fillOpacity={0.2} // Make them transparent so they overlay nicely
+                      isAnimationActive={true}
+                    />
                   ))}
-                </div>
-              )}
-
-              {/* Carrying the Chat - Hero Metric */}
-              <div className="relative mt-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl p-4 border border-primary/10">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold uppercase opacity-50">Carrying the Chat</span>
-                  <span className="text-lg font-black text-primary">{p.carryScore.toFixed(0)}%</span>
-                </div>
-                <div className="w-full h-2 bg-base-300 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-primary to-secondary rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min(p.carryScore, 100)}%` }}
-                    transition={{ duration: 0.8, delay: 0.3 }}
+                  <Legend wrapperStyle={{ paddingTop: "20px" }} />
+                  <RechartsTooltip content={<CustomRadarTooltip />} />
+                </RadarChart>
+              ) : (
+                <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                  <XAxis
+                    type="number"
+                    dataKey="x"
+                    name="Reply Time"
+                    tickFormatter={(val) => formatDurationHuman(val)}
+                    label={{
+                      value: "Avg Reply Time (s)",
+                      position: "bottom",
+                      offset: 0,
+                      opacity: 0.5,
+                      fontSize: 10,
+                    }}
+                    tick={{ fontSize: 10, opacity: 0.5 }}
                   />
-                </div>
-                <p className="text-[10px] opacity-40 mt-1">Based on who starts convos + message volume</p>
-              </div>
-            </div>
+                  <YAxis
+                    type="number"
+                    dataKey="y"
+                    name="Messages"
+                    label={{
+                      value: "Message Volume",
+                      angle: -90,
+                      position: "left",
+                      offset: 0,
+                      opacity: 0.5,
+                      fontSize: 10,
+                    }}
+                    tick={{ fontSize: 10, opacity: 0.5 }}
+                  />
+                  <RechartsTooltip
+                    cursor={{ strokeDasharray: "3 3" }}
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-neutral text-neutral-content rounded-xl p-3 shadow-xl text-xs">
+                            <p className="font-bold mb-1">{data.name}</p>
+                            <p>Messages: {data.y}</p>
+                            <p>Reply Time: {formatDurationHuman(data.x)}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Scatter
+                    name="Participants"
+                    data={participants.map((p, i) => ({
+                      x: p.medianReplyTime,
+                      y: p.msgCount,
+                      z: 1,
+                      name: isPrivacyMode ? obfuscateName(p.name) : p.name,
+                      initial: (isPrivacyMode ? "?" : p.name.slice(0, 5)).toUpperCase(),
+                      color: CHART_COLORS[i % CHART_COLORS.length],
+                    }))}
+                    shape={(props: {
+                      cx: number;
+                      cy: number;
+                      payload: { color: string; name: string; initial: string };
+                    }) => {
+                      const { cx, cy, payload } = props;
+                      return (
+                        <foreignObject x={cx - 15} y={cy - 15} width={30} height={30}>
+                          <div
+                            className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-[8px] font-black text-white shadow-md ring-2 ring-white dark:ring-base-100 transform hover:scale-125 transition-transform cursor-pointer"
+                            style={{ backgroundColor: payload.color }}
+                            title={payload.name}
+                          >
+                            {payload.initial}
+                          </div>
+                        </foreignObject>
+                      );
+                    }}
+                  />
+                </ScatterChart>
+              )}
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </motion.div>
 
-            {/* Stats Grid - Clean Pills */}
-            <div className="p-6 pt-2 space-y-3">
-              {/* Primary Stats Row */}
-              <div className="flex gap-3">
-                <div className="flex-1 bg-base-200/50 rounded-2xl p-4 text-center">
-                  <div className="flex items-center justify-center gap-2 text-primary mb-1">
-                    <MessageSquare size={16} />
-                    <span className="text-xs font-bold uppercase opacity-60">Messages</span>
-                  </div>
-                  <span className="text-2xl font-black tabular-nums">{p.msgCount.toLocaleString()}</span>
-                  <p className="text-[10px] opacity-40 mt-1">{p.wordCount.toLocaleString()} words</p>
-                </div>
-                <div className="flex-1 bg-base-200/50 rounded-2xl p-4 text-center">
-                  <Tooltip text="Words per message — higher means longer messages">
-                    <div className="flex items-center justify-center gap-2 text-secondary mb-1">
-                      <Zap size={16} />
-                      <span className="text-xs font-bold uppercase opacity-60">Words/Msg</span>
-                      <HelpCircle size={10} className="opacity-40" />
-                    </div>
-                  </Tooltip>
-                  <span className="text-2xl font-black tabular-nums">{p.yapIndex.toFixed(1)}</span>
-                  <p className="text-[10px] opacity-40 mt-1">
-                    {p.yapIndex > 10 ? "Long-winded" : p.yapIndex > 5 ? "Detailed" : "Brief"}
-                  </p>
-                </div>
-              </div>
+      {/* Unified League Table */}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between px-4">
+          <h3 className="text-lg font-bold opacity-50 uppercase tracking-wider text-xs">League Table</h3>
+          <div className="text-[10px] opacity-40 uppercase font-bold tracking-wider">Ranked by Impact</div>
+        </div>
 
-              {/* Secondary Stats Row */}
-              <div className="flex gap-3">
-                <div className="flex-1 bg-info/10 rounded-2xl p-4 text-center">
-                  <Tooltip text="How often this person starts new conversations">
-                    <span className="text-[10px] font-bold uppercase opacity-50 block mb-1 inline-flex items-center gap-1">
-                      Starts Convos <HelpCircle size={8} className="opacity-40" />
-                    </span>
-                  </Tooltip>
-                  <span className="text-xl font-black text-info">{p.initiationRate.toFixed(0)}%</span>
-                </div>
-                <div className="flex-1 bg-success/10 rounded-2xl p-4 text-center">
-                  <Tooltip text="Typical time to respond (median)">
-                    <span className="text-[10px] font-bold uppercase opacity-50 block mb-1 inline-flex items-center gap-1">
-                      Reply Speed <HelpCircle size={8} className="opacity-40" />
-                    </span>
-                  </Tooltip>
-                  <span className="text-xl font-black text-success">{formatDurationHuman(p.medianReplyTime)}</span>
-                  {p.longestReplyTime > 0 && (
-                    <p className="text-[10px] opacity-40 mt-1">Longest: {formatDurationHuman(p.longestReplyTime)}</p>
-                  )}
-                </div>
-              </div>
+        <div className="bg-base-100/50 border border-base-200 rounded-[2rem] overflow-hidden backdrop-blur-sm">
+          {/* Table Header */}
+          <div className="grid grid-cols-12 gap-4 p-4 border-b border-base-200/50 text-[10px] uppercase font-bold tracking-wider opacity-50">
+            <div className="col-span-1 text-center">#</div>
+            <div className="col-span-4">Participant</div>
+            <div className="col-span-3">Volume</div>
+            <div className="col-span-2 text-center">Speed</div>
+            <div className="col-span-2 text-right">Impact</div>
+          </div>
 
-              {/* Drama Stats Row */}
-              <div className="flex gap-3">
-                {/* Left on Read */}
-                <Tooltip text="Times they didn't reply and the conversation died">
-                  <div className="flex-1 bg-warning/10 border border-warning/10 rounded-2xl p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center text-xl">
-                      👻
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-bold uppercase opacity-50 block">Left on Read</span>
-                      <span className="text-lg font-black text-warning">{p.leftOnReadCount}x</span>
-                    </div>
-                  </div>
-                </Tooltip>
+          {/* Table Rows */}
+          <div className="divide-y divide-base-200/50">
+            {participants
+              .sort((a, b) => b.carryScore - a.carryScore)
+              .map((p, index) => {
+                const badges = getBadges(p);
+                const handleHide = async () => {
+                  if (confirm(`Hide ${p.name} from analysis? You can unhide them in settings.`)) {
+                    await db.participants.update(p.id, { isHidden: true });
+                  }
+                };
 
-                {/* Ghost Count */}
-                <Tooltip text="Replies that took over 12 hours">
-                  <div className="flex-1 bg-base-200/50 border border-base-200 rounded-2xl p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-600/20 flex items-center justify-center">
-                      <Ghost size={18} className="text-slate-500" />
+                // Max values for bars (re-calculated here or passed down? simple recalc is fine for now)
+                const maxMsg = Math.max(...participants.map((px) => px.msgCount)) || 1;
+
+                return (
+                  <motion.div
+                    key={p.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    className="grid grid-cols-12 gap-4 p-4 hover:bg-base-100 transition-colors group relative"
+                  >
+                    {/* Rank */}
+                    <div className="col-span-1 text-center font-black text-lg opacity-30 group-hover:opacity-100 transition-opacity">
+                      {index + 1}
                     </div>
-                    <div>
-                      <span className="text-[10px] font-bold uppercase opacity-50 block">Ghosted (12h+)</span>
-                      <span className="text-lg font-black">{p.ghostCount}x</span>
+
+                    {/* Participant Info */}
+                    <div className="col-span-4 flex gap-3">
+                      <div className="relative h-fit">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-sm font-black text-white shadow-sm ring-2 ring-white dark:ring-base-100">
+                          {(isPrivacyMode ? "?" : p.name.charAt(0)).toUpperCase()}
+                        </div>
+                        {/* Status Indicator (e.g. Ghost) */}
+                        {p.ghostCount > 5 && (
+                          <div
+                            className="absolute -bottom-1 -right-1 bg-base-100 rounded-full p-0.5"
+                            title="Frequent Ghost"
+                          >
+                            <Ghost size={12} className="text-slate-400" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold truncate text-sm">
+                            {isPrivacyMode ? obfuscateName(p.name) : p.name}
+                          </span>
+                          {/* Primary Badge for quick visual */}
+                          {badges.length > 0 && (
+                            <span
+                              className={`w-2 h-2 rounded-full ${badges[0].color.split(" ")[0]}`}
+                              title={badges[0].label}
+                            />
+                          )}
+                          <button
+                            onClick={handleHide}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-base-200 rounded-full"
+                          >
+                            <EyeOff size={12} className="opacity-50" />
+                          </button>
+                        </div>
+                        {/* Inline Badge Descriptions */}
+                        {badges.length > 0 && (
+                          <div className="flex flex-col gap-0.5 mt-1">
+                            {badges.map((b) => (
+                              <div key={b.id} className="text-[11px] opacity-70 leading-tight flex items-start gap-1">
+                                {b.icon}
+                                <span>
+                                  <span className="font-semibold">{b.label}:</span>{" "}
+                                  <span className="opacity-80">{b.description}</span>
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </Tooltip>
-              </div>
-            </div>
-          </motion.div>
-        );
-      })}
+
+                    {/* Volume Bar */}
+                    <div className="col-span-3">
+                      <div className="flex justify-between text-[10px] mb-1 font-bold">
+                        <span>{p.msgCount.toLocaleString()}</span>
+                        <span className="opacity-40">{p.messageShare.toFixed(0)}%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-base-300/50 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all duration-1000"
+                          style={{ width: `${(p.msgCount / maxMsg) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Speed & Stats */}
+                    <div className="col-span-2 flex flex-col items-center  text-xs">
+                      <div className="font-bold whitespace-nowrap" title="Median Reply Time">
+                        {formatDurationHuman(p.medianReplyTime)}
+                      </div>
+                      <div className="text-[10px] opacity-40">yp: {p.yapIndex.toFixed(1)}</div>
+                    </div>
+
+                    {/* Impact Score */}
+                    <div className="col-span-2 text-right">
+                      <div className="inline-flex flex-col">
+                        <span className="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+                          {p.carryScore.toFixed(0)}
+                        </span>
+                        <span className="text-[9px] uppercase font-bold opacity-30">Impact</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
