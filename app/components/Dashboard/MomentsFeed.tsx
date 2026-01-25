@@ -7,7 +7,7 @@ import { findInterestingMoments } from "../../lib/analysis";
 import { DEFAULT_CONFIG } from "../../types";
 import { MomentCard } from "../UI/MomentCard";
 import { FilterBar } from "../UI/FilterBar";
-import { Loader2, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useText } from "../../hooks/useText";
 import { Skeleton } from "../UI/Skeleton";

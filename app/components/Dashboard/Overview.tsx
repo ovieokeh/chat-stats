@@ -4,7 +4,6 @@ import React from "react";
 import { OverviewHero } from "./OverviewHero";
 import { ChartCard } from "../UI/ChartCard";
 import { ResponsiveContainer, XAxis, Tooltip, AreaChart, Area, CartesianGrid } from "recharts";
-import { formatNumber } from "../../lib/format";
 
 import { Heatmap } from "./Heatmap";
 import { TopicCloud } from "./TopicCloud";
@@ -55,14 +54,13 @@ interface OverviewProps {
 }
 
 import { formatDurationHuman } from "../../lib/format";
-import { User, Clock, MessageSquare } from "lucide-react";
+import { MessageSquare, Clock } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useText } from "../../hooks/useText";
 
 export const Overview: React.FC<OverviewProps> = ({
   stats,
   timelineData,
-  hourlyData,
   heatmapData,
   participants = [],
   topics = [],

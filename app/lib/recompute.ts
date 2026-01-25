@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { sessionize, inferReplyEdges } from "./analysis";
-import { Message, ExportConfig } from "../types";
+import { ExportConfig } from "../types";
 
 /**
  * Re-runs the analysis pipeline (sessionization, reply inference) for a given import.
@@ -51,6 +51,6 @@ export const recomputeImportAnalysis = async (importId: number) => {
   });
 
   console.log(
-    `Re-computation complete for import ${importId}. ` + `Sessions: ${newSessions.length}, Edges: ${newEdges.length}`
+    `Re-computation complete for import ${importId}. ` + `Sessions: ${newSessions.length}, Edges: ${newEdges.length}`,
   );
 };

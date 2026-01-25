@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MessageSquare, Award, Clock, Hash, Moon, Zap, Ghost, Divide, Share2, Sun } from "lucide-react";
+import { MessageSquare, Award, Moon, Zap, Ghost, Share2 } from "lucide-react";
 import { formatNumber } from "../../lib/format";
 import { useText } from "../../hooks/useText";
 
@@ -67,7 +67,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
       tagline: t("dashboard.export.personas.volume.tagline"),
       icon: <Award className="w-full h-full" />,
       getVal: (p) => formatNumber(p.msgCount),
-      getDetail: (p) => t("dashboard.export.personas.volume.suffix"),
+      getDetail: (_p) => t("dashboard.export.personas.volume.suffix"),
       sort: (a, b) => b.msgCount - a.msgCount,
       bgClass: "bg-primary text-primary-content",
       accentClass: "bg-white/20",
@@ -78,7 +78,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
       tagline: t("dashboard.export.personas.yap.tagline"),
       icon: <Share2 className="w-full h-full" />,
       getVal: (p) => p.yapIndex.toFixed(1),
-      getDetail: (p) => t("dashboard.export.personas.yap.suffix"),
+      getDetail: (_p) => t("dashboard.export.personas.yap.suffix"),
       sort: (a, b) => b.yapIndex - a.yapIndex,
       bgClass: "bg-secondary text-secondary-content",
       accentClass: "bg-white/20",
@@ -94,7 +94,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
         if (s < 3600) return `${Math.floor(s / 60)}m`;
         return `${(s / 3600).toFixed(1)}h`;
       },
-      getDetail: (p) => t("dashboard.export.personas.speed.suffix"),
+      getDetail: (_p) => t("dashboard.export.personas.speed.suffix"),
       sort: (a, b) => {
         if (a.medianReplyTime === 0) return 1;
         if (b.medianReplyTime === 0) return -1;
@@ -109,7 +109,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
       tagline: t("dashboard.export.personas.night.tagline"),
       icon: <Moon className="w-full h-full" />,
       getVal: (p) => formatNumber(p.nightOwlCount),
-      getDetail: (p) => t("dashboard.export.personas.night.suffix"),
+      getDetail: (_p) => t("dashboard.export.personas.night.suffix"),
       sort: (a, b) => b.nightOwlCount - a.nightOwlCount,
       bgClass: "bg-neutral text-neutral-content",
       accentClass: "bg-white/10",
@@ -120,7 +120,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
       tagline: t("dashboard.export.personas.ghost.tagline"),
       icon: <Ghost className="w-full h-full" />,
       getVal: (p) => `${p.ghostCount}`,
-      getDetail: (p) => t("dashboard.export.personas.ghost.suffix"),
+      getDetail: (_p) => t("dashboard.export.personas.ghost.suffix"),
       sort: (a, b) => b.ghostCount - a.ghostCount,
       bgClass: "bg-base-300 text-base-content",
       accentClass: "bg-black/10",
@@ -131,7 +131,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
       tagline: t("dashboard.export.personas.double.tagline"),
       icon: <MessageSquare className="w-full h-full" />,
       getVal: (p) => formatNumber(p.doubleTextCount),
-      getDetail: (p) => t("dashboard.export.personas.double.suffix"),
+      getDetail: (_p) => t("dashboard.export.personas.double.suffix"),
       sort: (a, b) => b.doubleTextCount - a.doubleTextCount,
       bgClass: "bg-info text-info-content",
       accentClass: "bg-white/20",
@@ -267,7 +267,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
 
           {/* Footer */}
           <div className={`${isStories ? "mt-12" : "mt-6"} flex justify-between items-end opacity-60`}>
-            <div className="text-lg font-bold tracking-wide">{t("dashboard.export.general.analyzer")}</div>
+            <div className="text-lg font-bold tracking-wide">{t("dashboard.export.general.title")}</div>
             <div className="text-sm font-mono">{t("dashboard.export.general.generatedLocally")}</div>
           </div>
         </div>
@@ -291,7 +291,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
             <div className="text-right">
               <div className="font-mono opacity-50 text-xl tracking-tighter font-bold">{new Date().getFullYear()}</div>
               <div className="font-mono opacity-30 text-[10px] tracking-widest uppercase mt-1">
-                {t("dashboard.export.general.analyzer")}
+                {t("dashboard.export.general.title")}
               </div>
             </div>
           </div>
@@ -386,7 +386,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
 
               {/* Visualization Placeholder / Quote */}
               <div className="mt-auto p-6 rounded-[2rem] bg-white/5 border border-white/10 italic opacity-40 text-sm leading-relaxed">
-                "{t("dashboard.shareModal.subtitle")}"
+                &quot;{t("dashboard.shareModal.subtitle")}&quot;
               </div>
             </div>
           </div>
@@ -395,7 +395,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
           <div
             className={`${isStories ? "mt-16" : "mt-10"} flex justify-between items-end opacity-40 border-t border-white/10 pt-6`}
           >
-            <div className="text-xs font-bold tracking-widest uppercase">{t("dashboard.export.general.analyzer")}</div>
+            <div className="text-xs font-bold tracking-widest uppercase">{t("dashboard.export.general.title")}</div>
             <div className="text-[10px] font-mono uppercase tracking-widest">
               {t("dashboard.export.general.generatedLocally")}
             </div>
@@ -405,17 +405,3 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
     </div>
   );
 };
-
-const StatCard: React.FC<{ label: string; value: string; icon: React.ReactNode; subLabel: string }> = ({
-  label,
-  value,
-  icon,
-  subLabel,
-}) => (
-  <div className="bg-white/5 border border-white/10 p-10 rounded-[50px] backdrop-blur-md">
-    <div className="p-4 bg-white/10 w-fit rounded-2xl mb-6">{icon}</div>
-    <p className="text-xl font-bold opacity-30 uppercase tracking-widest mb-1">{label}</p>
-    <p className="text-6xl font-black mb-2 tracking-tighter">{value}</p>
-    <p className="text-xl font-bold opacity-60 uppercase tracking-wider">{subLabel}</p>
-  </div>
-);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 interface PrivacyContextType {
   isPrivacyMode: boolean;
@@ -10,15 +10,12 @@ interface PrivacyContextType {
 const PrivacyContext = createContext<PrivacyContextType | undefined>(undefined);
 
 export const PrivacyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isPrivacyMode, setIsPrivacyMode] = useState<boolean>(false);
-
-  // Initialize from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("chat-analyzer-privacy-mode");
-    if (saved === "true") {
-      setIsPrivacyMode(true);
+  const [isPrivacyMode, setIsPrivacyMode] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("chat-analyzer-privacy-mode") === "true";
     }
-  }, []);
+    return false;
+  });
 
   const togglePrivacyMode = () => {
     setIsPrivacyMode((prev) => {

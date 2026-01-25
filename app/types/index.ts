@@ -51,6 +51,7 @@ export interface Message {
   language?: string;
   sentiment?: number;
   tokensJson?: string;
+  _tempSenderName?: string | null;
 }
 
 export interface Session {
@@ -76,10 +77,6 @@ export interface ReplyEdge {
   sameSession: boolean;
 }
 
-export interface InteractionType {
-  // Placeholder if needed for future
-}
-
 export type MomentType = "volume_spike" | "long_gap" | "marathon_session" | "sentiment_spike";
 
 export interface Moment {
@@ -92,7 +89,7 @@ export interface Moment {
   description: string;
   magnitude: number; // e.g., z-score, duration in mins, gap in hours
   importance: number; // 0-1 score for sorting
-  data?: any; // context (e.g., specific message snippet)
+  data?: Record<string, unknown>; // context (e.g., specific message snippet)
 }
 
 export interface DerivedMetric {
@@ -131,6 +128,26 @@ export interface ExportConfig {
     redactionMode: boolean;
     hashNames: boolean;
   };
+}
+
+export interface EnrichedParticipant {
+  id: number;
+  name: string;
+  msgCount: number;
+  wordCount: number;
+  yapIndex: number;
+  initiationRate: number;
+  medianReplyTime: number;
+  avgReplyTime: number;
+  secondsKeptWaiting: number;
+  nightOwlCount: number;
+  earlyBirdCount: number;
+  ghostCount: number;
+  doubleTextCount: number;
+  longestReplyTime: number;
+  messageShare: number;
+  carryScore: number;
+  leftOnReadCount: number;
 }
 
 export const DEFAULT_CONFIG: ExportConfig = {

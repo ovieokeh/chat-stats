@@ -1,13 +1,19 @@
-import en from "../locales/en.json";
+import en from "../locales/new.json";
+// import en from "../locales/en.json";
 
 // Type-safe accessor? For now, we'll just use a simple key traversal.
 // In a real app with i18n, we'd use a library like react-i18next or next-intl.
 
-type LocaleData = typeof en;
-
 // Helper to get nested value by dot notation string
-function getNestedValue(obj: any, path: string): string | undefined {
-  return path.split(".").reduce((acc, part) => acc && acc[part], obj);
+function getNestedValue(obj: Record<string, unknown>, path: string): string | undefined {
+  const value = path.split(".").reduce((acc: unknown, part) => {
+    if (acc && typeof acc === "object" && part in acc) {
+      return (acc as Record<string, unknown>)[part];
+    }
+    return undefined;
+  }, obj);
+
+  return typeof value === "string" ? value : undefined;
 }
 
 export const useText = () => {

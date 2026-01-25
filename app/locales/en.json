@@ -34,7 +34,7 @@
     "errorDeleting": "Error deleting data"
   },
   "home": {
-    "title": "WhatsApp Insights",
+    "title": "ChatStats",
     "description": "Analyze your chat history locally. Your data never leaves your device.",
     "recentImports": "Recent Imports",
     "viewDashboard": "View Dashboard",
@@ -178,6 +178,7 @@
         }
       },
       "general": {
+        "title": "ChatStats",
         "analyzer": "CHAT ANALYZER",
         "generatedLocally": "GENERATED LOCALLY",
         "rankings": "THE\nRANKINGS",

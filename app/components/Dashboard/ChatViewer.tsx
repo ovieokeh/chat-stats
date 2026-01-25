@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { db } from "../../lib/db";
 import Dexie from "dexie";
 import { useLiveQuery } from "dexie-react-hooks";
+import { ExportConfig } from "../../types";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { getAvatarColor } from "../../lib/colors";
@@ -71,7 +72,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
     if (initialScrollToTimestamp && !hasJumped) {
       // Find which page this timestamp belongs to.
       // This requires a count of messages BEFORE this timestamp.
-      let query = db.messages.where("[importId+ts]");
+      const query = db.messages.where("[importId+ts]");
 
       // Adjust efficient bounds if timeRange is set
       const minKey = timeRange ? timeRange.startTs : Dexie.minKey;
@@ -107,7 +108,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
   const importRecord = importData?.importRecord;
 
   const timezone = importRecord?.configJson
-    ? (JSON.parse(importRecord.configJson) as any).parsing?.timezone || "UTC"
+    ? (JSON.parse(importRecord.configJson) as ExportConfig).parsing?.timezone || "UTC"
     : "UTC";
 
   const participantMap = React.useMemo(() => {
@@ -119,12 +120,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
     return map;
   }, [participants, isPrivacyMode]);
 
-  // auto select primary viewer
-  useEffect(() => {
-    if (participants?.length) {
-      setPrimaryViewerId(participants[0].id!);
-    }
-  }, [participants]);
+  const effectivePrimaryViewerId = primaryViewerId ?? participants?.[0]?.id ?? null;
 
   // DateTime formatters
   // DateTime formatters - Memoized for performance
@@ -136,7 +132,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
         hour12: false,
         timeZone: timezone,
       });
-    } catch (e) {
+    } catch {
       return null;
     }
   }, [timezone]);
@@ -150,7 +146,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
         year: "numeric",
         timeZone: timezone,
       });
-    } catch (e) {
+    } catch {
       return null;
     }
   }, [timezone]);
@@ -177,7 +173,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
 
   // ... (primary viewer logic) ...
   const messages = useLiveQuery(async () => {
-    let collection = db.messages.where("[importId+ts]");
+    const collection = db.messages.where("[importId+ts]");
 
     let rangeCollection;
     if (timeRange && !showFullHistory) {
@@ -227,7 +223,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
             <span className="text-xs opacity-60">{t("dashboard.chatViewer.viewAs")}</span>
             <select
               className="select select-sm select-bordered w-32 max-w-xs text-xs"
-              value={primaryViewerId || ""}
+              value={effectivePrimaryViewerId || ""}
               onChange={(e) => setPrimaryViewerId(Number(e.target.value))}
             >
               {participants?.map((p) => (
@@ -312,7 +308,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
 
         {messages?.map((msg) => {
           const senderName = msg.senderId ? participantMap.get(msg.senderId) : t("common.system");
-          const isPrimary = msg.senderId === primaryViewerId;
+          const isPrimary = msg.senderId === effectivePrimaryViewerId;
           const isSystem = msg.type === "system";
 
           const nameColorClass = senderName && !isSystem ? getAvatarColor(senderName) : "";

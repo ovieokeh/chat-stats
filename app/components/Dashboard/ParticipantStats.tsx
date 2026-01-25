@@ -9,6 +9,7 @@ import { obfuscateName } from "../../lib/utils";
 import { Crown, FastForward, Copy, TrendingUp } from "lucide-react";
 import { db } from "../../lib/db";
 import { useText } from "../../hooks/useText";
+import { EnrichedParticipant } from "../../types";
 import { motion } from "framer-motion";
 import {
   Radar,
@@ -26,28 +27,8 @@ import {
   CartesianGrid,
 } from "recharts";
 
-interface Participant {
-  id: number;
-  name: string;
-  msgCount: number;
-  wordCount: number;
-  yapIndex: number;
-  initiationRate: number;
-  medianReplyTime: number;
-  avgReplyTime: number;
-  secondsKeptWaiting: number;
-  nightOwlCount: number;
-  earlyBirdCount: number;
-  ghostCount: number;
-  doubleTextCount: number;
-  longestReplyTime: number;
-  messageShare: number;
-  carryScore: number;
-  leftOnReadCount: number;
-}
-
 interface ParticipantStatsProps {
-  participants: Participant[];
+  participants: EnrichedParticipant[];
 }
 
 interface Badge {
@@ -57,6 +38,54 @@ interface Badge {
   icon: React.ReactNode;
   color: string;
 }
+
+const CustomRadarTooltip = ({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{
+    name: string;
+    value: number | string | (number | string)[];
+    color?: string;
+    dataKey?: string | number;
+    payload: Record<string, string | number>;
+  }>;
+}) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const sortedItems = [...payload].sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0));
+
+    return (
+      <div className="bg-neutral/95 backdrop-blur-md text-neutral-content rounded-xl p-4 shadow-xl border border-white/10 text-xs min-w-[200px]">
+        <div className="mb-3 border-b border-white/10 pb-2">
+          <p className="font-black text-sm text-white">{data.subject}</p>
+          <p className="opacity-60 text-[10px] uppercase font-bold tracking-wider">{data.description}</p>
+        </div>
+        <div className="space-y-1.5">
+          {sortedItems.map((item) => {
+            const pId = item.dataKey;
+            const rawValue = data[`${pId}_raw`];
+
+            return (
+              <div key={item.name} className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="font-bold text-gray-200">{item.name}</span>
+                </div>
+                <span className="font-mono opacity-80">{rawValue}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants }) => {
   const { isPrivacyMode } = usePrivacy();
@@ -155,7 +184,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
       });
       return point;
     });
-  }, [participants]);
+  }, [participants, t]);
 
   // Colors for the chart - we need consistent colors for participants
   // We can cycle through some nice tailwind-ish hex codes or CSS variables
@@ -168,48 +197,6 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
     "#84d8ca",
     "#ca84d8",
   ];
-
-  const CustomRadarTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      // payload[0].payload contains the data object for this axis (subject, description, and participant values)
-      const data = payload[0].payload;
-
-      // Sort payload by value (descending) to show top rankers first
-      // We need to map the payload items back to participants to get names and raw values
-      const sortedItems = [...payload].sort((a, b) => b.value - a.value);
-
-      return (
-        <div className="bg-neutral/95 backdrop-blur-md text-neutral-content rounded-xl p-4 shadow-xl border border-white/10 text-xs min-w-[200px]">
-          <div className="mb-3 border-b border-white/10 pb-2">
-            <p className="font-black text-sm text-white">{data.subject}</p>
-            <p className="opacity-60 text-[10px] uppercase font-bold tracking-wider">{data.description}</p>
-          </div>
-          <div className="space-y-1.5">
-            {sortedItems.map((item: any) => {
-              // item.dataKey is the participant ID
-              const pId = item.dataKey;
-              // Find raw value from data object
-              const rawValue = data[`${pId}_raw`];
-
-              return (
-                <div key={item.name} className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="font-bold text-gray-200">{item.name}</span>
-                  </div>
-                  <span className="font-mono opacity-80">{rawValue}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
 
   // --- End Data Prep ---
 
@@ -259,12 +246,11 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
       </div>
     );
   }
-
   // Calculate Badges (who is #1 in what)
-  const getBadges = (p: Participant): Badge[] => {
+  const getBadges = (p: EnrichedParticipant): Badge[] => {
     const badges: Badge[] = [];
 
-    const isTop = (metric: keyof Participant, higherIsBetter = true) => {
+    const isTop = (metric: keyof EnrichedParticipant, higherIsBetter = true) => {
       const val = p[metric] as number;
       if (val === 0) return false;
       return !participants.some((other) => {

@@ -1,4 +1,4 @@
-import { format, differenceInSeconds, intervalToDuration, formatDuration } from "date-fns";
+import { format, intervalToDuration, formatDistanceToNow } from "date-fns";
 
 export const formatNumber = (num: number): string => {
   return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(num);

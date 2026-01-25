@@ -27,16 +27,11 @@ export const MomentCard: React.FC<MomentCardProps> = ({ moment, className }) => 
     }
   };
 
-  const getBadges = () => {
-    // Future: add badges for high magnitude
-    return null;
-  };
-
   return (
     <div
       className={cn(
         "card bg-base-100 border border-base-300/60 rounded-2xl relative overflow-hidden group hover:shadow-lg transition-all",
-        className
+        className,
       )}
     >
       {/* Rail Accent */}
@@ -46,10 +41,10 @@ export const MomentCard: React.FC<MomentCardProps> = ({ moment, className }) => 
           moment.type === "volume_spike"
             ? "bg-primary/60"
             : moment.type === "long_gap"
-            ? "bg-warning/60"
-            : moment.type === "marathon_session"
-            ? "bg-secondary/60"
-            : "bg-base-content/20"
+              ? "bg-warning/60"
+              : moment.type === "marathon_session"
+                ? "bg-secondary/60"
+                : "bg-base-content/20",
         )}
       />
 
@@ -70,7 +65,7 @@ export const MomentCard: React.FC<MomentCardProps> = ({ moment, className }) => 
               </p>
               {moment.data?.startTs && moment.data?.endTs && (
                 <p className="text-[11px] text-base-content/60 font-mono mb-1">
-                  {format(moment.data.startTs, "HH:mm")} - {format(moment.data.endTs, "HH:mm")}
+                  {format(moment.data.startTs as number, "HH:mm")} - {format(moment.data.endTs as number, "HH:mm")}
                 </p>
               )}
               <p className="text-xs text-base-content/80 leading-snug line-clamp-3">{moment.description}</p>

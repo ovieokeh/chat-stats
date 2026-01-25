@@ -57,7 +57,7 @@ function formatTimestamp(rawDate: string): string {
   return `[${day}/${month}/${year}, ${formattedHour}:${min}:${sec}]`;
 }
 
-let transformedLines: string[] = [];
+const transformedLines: string[] = [];
 let i = 0;
 
 while (i < lines.length) {
@@ -111,7 +111,7 @@ while (i < lines.length) {
       }
 
       const sender = lines[j].trim();
-      let messageContent: string[] = [];
+      const messageContent: string[] = [];
 
       // Now collect content until the next VALID date match or INDENTED date or end of file
       let k = j + 1;
@@ -146,7 +146,7 @@ while (i < lines.length) {
             // We can check if it strictly matches a 'loose' date start?
             // Loose date regex: `^[A-Za-z]{3} \d{1,2}, \d{4}`
             const datePrefixMatch = contentLine.match(
-              /^([A-Za-z]{3} \d{1,2}, \d{4}\s+\d{1,2}:\d{2}:\d{2} [AP]M)\s+(.*)/
+              /^([A-Za-z]{3} \d{1,2}, \d{4}\s+\d{1,2}:\d{2}:\d{2} [AP]M)\s+(.*)/,
             );
             if (datePrefixMatch) {
               // It's a line like "Jul 07... What do you mean..."

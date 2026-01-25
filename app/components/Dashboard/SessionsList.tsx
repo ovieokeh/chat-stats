@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import Dexie from "dexie";
 import { db } from "../../lib/db";
+import { Session } from "../../types";
 import { format } from "date-fns";
 import { formatDurationSimple } from "../../lib/format";
 import { ArrowRight, Clock } from "lucide-react";
@@ -55,7 +56,7 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
   const groupedSessions = React.useMemo(() => {
     if (!sessions?.headers) return [];
 
-    const groups: { date: string; sessions: any[] }[] = [];
+    const groups: { date: string; sessions: Session[] }[] = [];
     sessions.headers.forEach((header) => {
       const dateStr = format(header.startTs, "yyyy-MM-dd");
       let group = groups.find((g) => g.date === dateStr);
@@ -66,7 +67,7 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
       group.sessions.push(header);
     });
     return groups;
-  }, [sessions?.headers]);
+  }, [sessions]);
 
   const goToSession = (startTs: number, endTs: number) => {
     const params = new URLSearchParams(searchParams.toString());

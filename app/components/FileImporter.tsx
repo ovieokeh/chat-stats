@@ -2,11 +2,11 @@
 
 import React, { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, FileText, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Upload, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { parseChat } from "../lib/parser";
 import { computeMessageFeatures, sessionize, inferReplyEdges } from "../lib/analysis";
 import { db } from "../lib/db";
-import { DEFAULT_CONFIG } from "../types";
+import { DEFAULT_CONFIG, Message } from "../types";
 import { useRouter } from "next/navigation";
 import { sha256 } from "js-sha256";
 import { useText } from "../hooks/useText";
@@ -72,22 +72,20 @@ export const FileImporter: React.FC = () => {
         // Process Messages
         const finalMessages = messages.map((m) => {
           // Link sender
-          const senderName = (m as any)._tempSenderName;
+          const senderName = m._tempSenderName;
           if (senderName && participantMap.has(senderName)) {
             m.senderId = participantMap.get(senderName);
           }
           m.importId = importId;
 
           // Compute features
-          computeMessageFeatures(m, DEFAULT_CONFIG);
-          return m as any;
-          // casting because computeMessageFeatures modifies in place and we need full Message type
-          // but ID is missing, acceptable for add.
+          computeMessageFeatures(m);
+          return m as Message;
         });
 
         // Batch add messages?
         // Dexie bulkAdd is fast
-        await db.messages.bulkAdd(finalMessages as any);
+        await db.messages.bulkAdd(finalMessages);
         setProgress(60);
 
         // Fetch back messages with IDs for session/reply logic?
@@ -110,13 +108,14 @@ export const FileImporter: React.FC = () => {
         setTimeout(() => {
           router.push(`/imports/${importId}`);
         }, 1000);
-      } catch (e: any) {
-        console.error(e);
+      } catch (e) {
+        const err = e as Error;
+        console.error(err);
         setStatus("error");
-        setErrorMsg(e.message || t("common.error"));
+        setErrorMsg(err.message || t("common.error"));
       }
     },
-    [router],
+    [router, t],
   );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({

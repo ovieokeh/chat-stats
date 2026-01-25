@@ -1,5 +1,4 @@
 import { Message, Session, ReplyEdge, ExportConfig, Moment } from "../types";
-import { franc } from "franc";
 import Vader from "vader-sentiment";
 import { DEFAULT_STOPWORDS } from "./constants/default-stopwords";
 import { getText } from "../hooks/useText";
@@ -7,7 +6,7 @@ import { getText } from "../hooks/useText";
 /**
  * Enhanced feature computation with awareness of WhatsApp artifacts.
  */
-export const computeMessageFeatures = (msg: Partial<Message>, config: ExportConfig) => {
+export const computeMessageFeatures = (msg: Partial<Message>) => {
   if (!msg.rawText || msg.type === "system") return;
 
   // Filter out WhatsApp placeholders before analysis
@@ -61,13 +60,6 @@ export const sessionize = (messages: Message[], config: ExportConfig): Session[]
 
 const createEnhancedSession = (msgs: Message[]): Session => {
   const participants = Array.from(new Set(msgs.map((m) => m.senderId).filter(Boolean)));
-  const typeCounts = msgs.reduce(
-    (acc, m) => {
-      acc[m.type] = (acc[m.type] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>,
-  );
 
   // Improved initiator detection: skip system messages or messages without a sender
   const initiator = msgs.find((m) => m.senderId && m.type !== "system");
@@ -164,7 +156,7 @@ export const getIsoDate = (ts: number, timezone: string): string => {
         month: "2-digit",
         day: "2-digit",
       });
-    } catch (e) {
+    } catch {
       console.warn(`Invalid timezone '${timezone}', falling back to UTC`);
       formatter = new Intl.DateTimeFormat("sv-SE", {
         timeZone: "UTC",
@@ -198,7 +190,7 @@ export const getTzMetadata = (ts: number, timezone: string) => {
         month: "2-digit",
         day: "2-digit",
       });
-    } catch (e) {
+    } catch {
       formatter = new Intl.DateTimeFormat("en-US", {
         timeZone: "UTC",
         hour12: false,
@@ -433,7 +425,7 @@ export const checkServiceHealth = async (): Promise<boolean> => {
   try {
     const res = await fetch(`${SERVICE_URL}/health`);
     return res.ok;
-  } catch (e) {
+  } catch {
     return false;
   }
 };
@@ -485,7 +477,7 @@ export const extractTopics = async (
     try {
       console.log("Using Smart Topic Service...");
       return await fetchSmartTopics(messages, customStopwords);
-    } catch (e) {
+    } catch {
       console.warn("Smart Service failed despite health check OK, fallback to local.");
     }
   } else {

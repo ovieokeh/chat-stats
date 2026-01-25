@@ -1,19 +1,16 @@
 "use client";
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Compass,
   MapPin,
-  Calendar,
   Clock,
   ChevronRight,
-  Check,
   X,
   RefreshCw,
   Heart,
   AlertCircle,
   Map as MapIcon,
-  Volume2,
   Loader2,
   Search,
 } from "lucide-react";
@@ -23,13 +20,33 @@ const FOURSQUARE_KEY = "ZUXE2WY1DNIBL1GSIRRCJ51UQP3SQTUMTULH5TQCB3X4Y1QM";
 const UNSPLASH_KEY = "O0F7gNQCrz__LcNGUbzvC4PGbHQh1Lhm128R_eINqSE";
 
 export default function App() {
-  const [step, setStep] = useState("welcome"); // 'welcome' | 'loading' | 'swiping' | 'itinerary'
-  const [city, setCity] = useState("Amsterdam");
-  const [cards, setCards] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [likes, setLikes] = useState([]);
-  const [swipeDir, setSwipeDir] = useState(null);
-  const [error, setError] = useState(null);
+  const [step, setStep] = useState<string>("welcome"); // 'welcome' | 'loading' | 'swiping' | 'itinerary'
+  const [city, setCity] = useState<string>("Amsterdam");
+  const [cards, setCards] = useState<Spot[]>([]);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [likes, setLikes] = useState<Spot[]>([]);
+  const [swipeDir, setSwipeDir] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  interface Spot {
+    id: string;
+    title: string;
+    subtitle: string;
+    tags: string[];
+    image: string;
+    location: {
+      name: string;
+      neighborhood: string;
+      lat?: number;
+      lng?: number;
+    };
+  }
+
+  interface DayPlan {
+    day: number;
+    neighborhood: string;
+    spots: Spot[];
+  }
 
   /**
    * SYSTEM LOGIC: DATA TRIANGULATION
@@ -68,7 +85,7 @@ export default function App() {
 
           try {
             const unsplashRes = await fetch(
-              `https://api.unsplash.com/search/photos?query=${query}&per_page=1&orientation=portrait&client_id=${UNSPLASH_KEY}`
+              `https://api.unsplash.com/search/photos?query=${query}&per_page=1&orientation=portrait&client_id=${UNSPLASH_KEY}`,
             );
             const unsplashData = await unsplashRes.json();
             const imageUrl =
@@ -88,7 +105,7 @@ export default function App() {
                 lng: place.geocodes?.main?.longitude,
               },
             };
-          } catch (e) {
+          } catch {
             return {
               id: place.fsq_id,
               title: place.name,
@@ -101,7 +118,7 @@ export default function App() {
               },
             };
           }
-        })
+        }),
       );
 
       setCards(enhancedCards.filter((c) => c !== null));
@@ -112,9 +129,9 @@ export default function App() {
     }
   };
 
-  const itinerary = useMemo(() => {
+  const itinerary = useMemo<DayPlan[]>(() => {
     if (likes.length === 0) return [];
-    const groups = likes.reduce((acc, item) => {
+    const groups = likes.reduce((acc: Record<string, Spot[]>, item: Spot) => {
       const neighborhood = item.location.neighborhood;
       if (!acc[neighborhood]) acc[neighborhood] = [];
       acc[neighborhood].push(item);
@@ -127,7 +144,7 @@ export default function App() {
     }));
   }, [likes]);
 
-  const handleSwipe = (direction) => {
+  const handleSwipe = (direction: string) => {
     setSwipeDir(direction);
     setTimeout(() => {
       if (direction === "right") {
@@ -350,7 +367,7 @@ export default function App() {
                     </div>
 
                     <div className="ml-7 border-l-2 border-slate-800 pl-10 space-y-10">
-                      {(dayPlan.spots as any).map((spot, idx) => (
+                      {dayPlan.spots.map((spot, idx) => (
                         <div key={spot.id} className="relative group">
                           <div className="absolute -left-[51px] top-2 w-5 h-5 rounded-full bg-slate-950 border-4 border-slate-800 group-hover:border-indigo-500 transition-all" />
 
@@ -360,6 +377,7 @@ export default function App() {
                                 <img
                                   src={spot.image}
                                   className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                                  alt={spot.title}
                                 />
                               </div>
                               <div className="flex-1">

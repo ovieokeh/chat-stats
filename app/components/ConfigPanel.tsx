@@ -25,7 +25,11 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onSave, onRese
     return `${hours}${t("common.duration.h")} ${mins}${t("common.duration.m")}`;
   };
 
-  const handleChange = (section: keyof ExportConfig, key: string, value: any) => {
+  const handleChange = <S extends keyof ExportConfig, K extends keyof ExportConfig[S]>(
+    section: S,
+    key: K,
+    value: ExportConfig[S][K],
+  ) => {
     setLocalConfig((prev) => ({
       ...prev,
       [section]: {

@@ -10,7 +10,6 @@ import {
   Loader2,
   CheckCircle2,
   MessageSquare,
-  Clock,
   Ghost,
   Zap,
   Moon,
@@ -20,15 +19,28 @@ import {
 import { toPng } from "html-to-image";
 import { ExportPoster, ExportPlatform, ExportType } from "./ExportPoster";
 import { useText } from "../../hooks/useText";
+import { EnrichedParticipant } from "../../types";
+
+interface ShareData {
+  stats: {
+    totalMessages: number;
+    totalWords: number;
+    activeDays: number;
+    avgDailyMessages: number;
+  };
+  topics: { text: string; count: number }[];
+  participants: EnrichedParticipant[];
+  chatName: string;
+}
 
 interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
   type: ExportType; // This might come in as 'overview' initially, but we'll default to 'persona' for the modal
-  data: any;
+  data: ShareData;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, type: initialType, data }) => {
+export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, data }) => {
   const { t } = useText();
   const [platform, setPlatform] = useState<ExportPlatform>("stories");
   const [activeTab, setActiveTab] = useState<"persona" | "summary">("persona");

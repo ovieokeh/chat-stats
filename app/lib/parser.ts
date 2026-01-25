@@ -3,7 +3,7 @@ import { parse, isValid } from "date-fns";
 
 // Helper to remove bidi chars
 const cleanText = (text: string): string => {
-  // eslint-disable-next-line no-control-regex
+   
   return text.replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, "");
 };
 
@@ -119,7 +119,7 @@ export const parseChat = (fileContent: string, config: ExportConfig): ParseResul
       };
 
       // Store temp sender name for ID resolution
-      (currentMessage as any)._tempSenderName = rawName === SYSTEM_SENDER ? null : rawName;
+      currentMessage._tempSenderName = rawName === SYSTEM_SENDER ? null : rawName;
     } else {
       // Multiline message append
       if (currentMessage) {

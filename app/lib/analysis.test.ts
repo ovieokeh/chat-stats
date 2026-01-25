@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { inferReplyEdges, findInterestingMoments } from "./analysis";
-import { Message, ExportConfig, Session } from "../types";
+import { Message, ExportConfig } from "../types";
 
 const mockConfig: ExportConfig = {
   parsing: {

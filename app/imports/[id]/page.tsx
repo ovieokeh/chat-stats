@@ -385,7 +385,9 @@ export default function ImportDashboard() {
                   onBlockTopic={async (topic) => {
                     try {
                       await db.stopwords.add({ word: topic.toLowerCase() });
-                    } catch (e) {}
+                    } catch {
+                      // Ignore
+                    }
                   }}
                 />
               </section>
