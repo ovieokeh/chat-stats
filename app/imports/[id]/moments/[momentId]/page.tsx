@@ -91,8 +91,8 @@ export default function MomentDetailsPage() {
               </p>
               {moment.data?.startTs && moment.data?.endTs && (
                 <p>
-                  Time: <strong>{format(moment.data.startTs, "HH:mm")}</strong> -{" "}
-                  <strong>{format(moment.data.endTs, "HH:mm")}</strong>
+                  Time: <strong>{format(moment.data.startTs as number, "HH:mm")}</strong> -{" "}
+                  <strong>{format(moment.data.endTs as number, "HH:mm")}</strong>
                 </p>
               )}
               <p>
@@ -116,7 +116,7 @@ export default function MomentDetailsPage() {
                 initialScrollToTimestamp={moment.ts}
                 timeRange={
                   moment.data?.startTs && moment.data?.endTs
-                    ? { startTs: moment.data.startTs, endTs: moment.data.endTs }
+                    ? { startTs: moment.data.startTs as number, endTs: moment.data.endTs as number }
                     : undefined
                 }
               />
