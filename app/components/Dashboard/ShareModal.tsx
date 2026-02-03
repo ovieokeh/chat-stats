@@ -28,7 +28,6 @@ interface ShareData {
     activeDays: number;
     avgDailyMessages: number;
   };
-  topics: { text: string; count: number }[];
   participants: EnrichedParticipant[];
   chatName: string;
 }

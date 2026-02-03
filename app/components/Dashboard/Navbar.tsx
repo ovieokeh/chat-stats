@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Settings, Eye, EyeOff, Sun, Moon, Flame } from "lucide-react";
+import { ArrowLeft, Settings, Eye, EyeOff, Sun, Moon, Flame, Search } from "lucide-react";
 import { format } from "date-fns";
 import { usePrivacy } from "../../context/PrivacyContext";
 import { useText } from "../../hooks/useText";
@@ -12,26 +12,42 @@ interface NavbarProps {
   filename: string;
   importedAt: number | Date;
   onSettingsClick: () => void;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ filename, importedAt, onSettingsClick }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  filename,
+  importedAt,
+  onSettingsClick,
+  searchQuery,
+  onSearchChange,
+}) => {
   const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
   const { t } = useText();
   const { theme, resolvedTheme, setTheme } = useTheme();
+  const [query, setQuery] = useState(searchQuery);
 
-  const currentTheme =
-    theme === "system" ? (resolvedTheme === "dark" ? "obsidian" : "bone") : (theme as string);
+  const currentTheme = theme === "system" ? (resolvedTheme === "dark" ? "obsidian" : "bone") : (theme as string);
   const themeOrder = ["bone", "obsidian", "ember"];
   const currentThemeIndex = Math.max(0, themeOrder.indexOf(currentTheme));
   const nextTheme = themeOrder[(currentThemeIndex + 1) % themeOrder.length];
 
-  const themeLabel =
-    currentTheme === "bone" ? "Bone" : currentTheme === "ember" ? "Ember" : "Obsidian";
+  const themeLabel = currentTheme === "bone" ? "Bone" : currentTheme === "ember" ? "Ember" : "Obsidian";
   const ThemeIcon = currentTheme === "bone" ? Sun : currentTheme === "ember" ? Flame : Moon;
+
+  useEffect(() => {
+    setQuery(searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => onSearchChange(query), 250);
+    return () => clearTimeout(timer);
+  }, [query, onSearchChange]);
 
   return (
     <nav className="sticky top-0 z-30 w-full border-b border-base-200 bg-base-100/80 backdrop-blur-md">
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-4 flex-wrap">
         <div className="flex items-center gap-4">
           <Link href="/" className="btn btn-circle btn-ghost btn-sm">
             <ArrowLeft className="w-5 h-5" />
@@ -46,7 +62,24 @@ export const Navbar: React.FC<NavbarProps> = ({ filename, importedAt, onSettings
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex-1 min-w-[220px] max-w-md w-full">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-base-content/50 z-10" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") onSearchChange(query);
+              }}
+              placeholder={t("navbar.search.placeholder")}
+              aria-label={t("navbar.search.label")}
+              className="input input-bordered input-sm pl-9 w-full rounded-full"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 ml-auto">
           <button
             className="btn btn-ghost btn-sm gap-2 normal-case font-medium opacity-70 hover:opacity-100"
             onClick={() => setTheme(nextTheme)}

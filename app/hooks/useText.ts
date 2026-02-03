@@ -1,5 +1,4 @@
-import en from "../locales/new.json";
-// import en from "../locales/en.json";
+import en from "../locales/en.json";
 
 // Type-safe accessor? For now, we'll just use a simple key traversal.
 // In a real app with i18n, we'd use a library like react-i18next or next-intl.

@@ -1,6 +1,5 @@
 import { Message, Session, ReplyEdge, ExportConfig, Moment } from "../types";
 import Vader from "vader-sentiment";
-import { DEFAULT_STOPWORDS } from "./constants/default-stopwords";
 import { getText } from "../hooks/useText";
 
 /**
@@ -246,9 +245,8 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
 
   // 1. Volume Spikes using MAD (Median Absolute Deviation)
   const dailyCounts: Record<string, number> = {};
-
-  // Track the first timestamp seen for each date to perform accurate timestamping later
   const dateToFirstTs: Record<string, number> = {};
+  const dateToLastTs: Record<string, number> = {};
 
   messages.forEach((m) => {
     const { date: d } = getTzMetadata(m.ts, timezone);
@@ -256,6 +254,9 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
 
     if (!dateToFirstTs[d] || m.ts < dateToFirstTs[d]) {
       dateToFirstTs[d] = m.ts;
+    }
+    if (!dateToLastTs[d] || m.ts > dateToLastTs[d]) {
+      dateToLastTs[d] = m.ts;
     }
   });
 
@@ -273,17 +274,8 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
       // Using the actual first message timestamp is safest for "jumping to" that moment.
       const anchorTs = dateToFirstTs[date] || new Date(date).getTime();
 
-      // Find End TS for this day to bound the view
-      // Optimization: we could track lastTs same as firstTs
-      // For now, let's filter (slower but accurate) or just use the whole day range logic
-      // Actually tracking lastTs is O(N) in the same loop, better.
-      // But for now, let's just assume we want to show the full day.
-      // We can iterate again or just construct end of day.
-      // Constructing end of day in target timezone is safer.
-      // But accurate last message TS is best.
-      const msgsForDay = messages.filter((m) => getTzMetadata(m.ts, timezone).date === date);
-      const startTs = msgsForDay[0]?.ts;
-      const endTs = msgsForDay[msgsForDay.length - 1]?.ts;
+      const startTs = dateToFirstTs[date];
+      const endTs = dateToLastTs[date];
 
       moments.push({
         importId,
@@ -410,108 +402,4 @@ export const findInterestingMoments = (messages: Message[], sessions: Session[],
   });
 
   return moments.sort((a, b) => b.ts - a.ts);
-};
-
-// -----------------------------------------------------------------------------
-// TOPIC EXTRACTION (New Addition)
-// -----------------------------------------------------------------------------
-
-/**
- * Checks if the local Python service is available.
- */
-const SERVICE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-export const checkServiceHealth = async (): Promise<boolean> => {
-  try {
-    const res = await fetch(`${SERVICE_URL}/health`);
-    return res.ok;
-  } catch {
-    return false;
-  }
-};
-
-/**
- * Calls the local Python service to get smart clusters.
- */
-const fetchSmartTopics = async (
-  messages: Message[],
-  customStopwords: Set<string>,
-): Promise<{ text: string; count: number }[]> => {
-  const texts = messages
-    .filter((m) => m.rawText && m.type !== "system")
-    .map((m) => m.rawText!)
-    .filter((t) => t.length > 5) // Basic length filter
-    .filter((t) => !/omitted|deleted/i.test(t)); // Filter artifacts
-
-  if (texts.length === 0) return [];
-
-  try {
-    const res = await fetch(`${SERVICE_URL}/cluster`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messages: texts,
-        stop_words: Array.from(customStopwords),
-      }),
-    });
-
-    if (!res.ok) throw new Error("Service returned error");
-    return await res.json();
-  } catch (e) {
-    console.warn("Smart topic extraction failed, falling back", e);
-    throw e;
-  }
-};
-
-/**
- * Extracts top topics from messages.
- * Tries the smart service first, then falls back to local frequency counting.
- */
-export const extractTopics = async (
-  messages: Message[],
-  customStopwords: Set<string> = new Set(),
-): Promise<{ text: string; count: number }[]> => {
-  // 1. Try Smart Service
-  const isServiceUp = await checkServiceHealth();
-  if (isServiceUp) {
-    try {
-      console.log("Using Smart Topic Service...");
-      return await fetchSmartTopics(messages, customStopwords);
-    } catch {
-      console.warn("Smart Service failed despite health check OK, fallback to local.");
-    }
-  } else {
-    console.log("Smart Topic Service unavailable, using local fallback.");
-  }
-
-  // 2. Fallback: Local Regex/Frequency
-  const wordCounts: Record<string, number> = {};
-  const mergedStopwords = new Set([...DEFAULT_STOPWORDS, ...customStopwords]);
-
-  // Regex to match words: strictly letters, minimum 3 chars
-  const wordRegex = /\b[a-zA-Z]{3,}\b/g;
-
-  messages.forEach((msg) => {
-    if (!msg.rawText || msg.type === "system") return;
-
-    // Normalize: lowercase
-    const text = msg.rawText.toLowerCase();
-
-    const matches = text.match(wordRegex);
-    if (matches) {
-      matches.forEach((word) => {
-        if (!mergedStopwords.has(word)) {
-          wordCounts[word] = (wordCounts[word] || 0) + 1;
-        }
-      });
-    }
-  });
-
-  // Convert to array and sort
-  const sortedTopics = Object.entries(wordCounts)
-    .map(([text, count]) => ({ text, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 50); // Top 50
-
-  return sortedTopics;
 };

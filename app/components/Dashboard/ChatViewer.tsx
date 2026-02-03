@@ -12,6 +12,7 @@ import { Skeleton } from "../UI/Skeleton";
 import { usePrivacy } from "../../context/PrivacyContext";
 import { obfuscateName, obfuscateText } from "../../lib/utils";
 import { useText } from "../../hooks/useText";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface ChatViewerProps {
   importId: number;
@@ -21,9 +22,41 @@ interface ChatViewerProps {
     endTs: number;
   };
   initialSearchTerm?: string;
+  pageParamKey?: string;
 }
 
 const PAGE_SIZE = 50;
+
+const normalizeSearchText = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const isSubsequence = (text: string, pattern: string) => {
+  if (!pattern) return true;
+  let j = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === pattern[j]) j += 1;
+    if (j >= pattern.length) return true;
+  }
+  return false;
+};
+
+const fuzzyMatch = (text: string, normalizedQuery: string) => {
+  if (!normalizedQuery) return true;
+  const normalizedText = normalizeSearchText(text);
+  if (!normalizedText) return false;
+  if (normalizedText.includes(normalizedQuery)) return true;
+
+  const queryTokens = normalizedQuery.split(" ");
+  const textTokens = normalizedText.split(" ");
+
+  return queryTokens.every((token) =>
+    textTokens.some((word) => word.startsWith(token) || token.startsWith(word) || isSubsequence(word, token)),
+  );
+};
 
 const HighlightedText: React.FC<{ text: string; highlight: string }> = ({ text, highlight }) => {
   if (!highlight.trim()) return <>{text}</>;
@@ -51,16 +84,35 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
   initialScrollToTimestamp,
   timeRange,
   initialSearchTerm,
+  pageParamKey = "chatPage",
 }) => {
-  const [page, setPage] = useState(0);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [page, setPage] = useState(() => {
+    const raw = searchParams.get(pageParamKey);
+    const parsed = raw ? parseInt(raw, 10) : 1;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed - 1 : 0;
+  });
   const [search, setSearch] = useState(initialSearchTerm || "");
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearchTerm || "");
   const [hasJumped, setHasJumped] = useState(false);
+  const hasInitializedSearch = React.useRef(false);
   const [primaryViewerId, setPrimaryViewerId] = useState<number | null>(null);
   const [showFullHistory, setShowFullHistory] = useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const { isPrivacyMode } = usePrivacy();
   const { t } = useText();
+  const searchParamsStr = searchParams.toString();
+
+  const setPageAndSync = React.useCallback(
+    (nextPage: number) => {
+      setPage(nextPage);
+      const params = new URLSearchParams(searchParamsStr);
+      params.set(pageParamKey, String(nextPage + 1));
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [pageParamKey, router, searchParamsStr],
+  );
 
   // Scroll to top on page change
   useEffect(() => {
@@ -68,6 +120,14 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
       containerRef.current.scrollTop = 0;
     }
   }, [page]);
+
+  useEffect(() => {
+    const raw = searchParams.get(pageParamKey);
+    const parsed = raw ? parseInt(raw, 10) : 1;
+    const nextPage = Number.isFinite(parsed) && parsed > 0 ? parsed - 1 : 0;
+    setPage((current) => (current === nextPage ? current : nextPage));
+  }, [pageParamKey, searchParams]);
+
   useEffect(() => {
     if (initialScrollToTimestamp && !hasJumped) {
       // Find which page this timestamp belongs to.
@@ -84,16 +144,26 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
         .count()
         .then((count) => {
           const targetPage = Math.max(0, Math.floor((count - 1) / PAGE_SIZE));
-          setPage(targetPage);
+          setPageAndSync(targetPage);
           setHasJumped(true);
         });
     }
-  }, [initialScrollToTimestamp, importId, hasJumped, timeRange]);
+  }, [initialScrollToTimestamp, importId, hasJumped, timeRange, setPageAndSync]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(timer);
   }, [search]);
+
+  useEffect(() => {
+    setSearch(initialSearchTerm || "");
+    setDebouncedSearch(initialSearchTerm || "");
+    if (hasInitializedSearch.current) {
+      setPageAndSync(0);
+    } else {
+      hasInitializedSearch.current = true;
+    }
+  }, [initialSearchTerm, setPageAndSync]);
 
   // Fetch participants and config
   const importData = useLiveQuery(async () => {
@@ -174,6 +244,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
   // ... (primary viewer logic) ...
   const messages = useLiveQuery(async () => {
     const collection = db.messages.where("[importId+ts]");
+    const normalizedQuery = normalizeSearchText(debouncedSearch);
 
     let rangeCollection;
     if (timeRange && !showFullHistory) {
@@ -182,8 +253,8 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
       rangeCollection = collection.between([importId, Dexie.minKey], [importId, Dexie.maxKey]);
     }
 
-    if (debouncedSearch) {
-      rangeCollection = rangeCollection.filter((m) => m.rawText.toLowerCase().includes(debouncedSearch.toLowerCase()));
+    if (normalizedQuery) {
+      rangeCollection = rangeCollection.filter((m) => fuzzyMatch(m.rawText, normalizedQuery));
     }
 
     const offset = page * PAGE_SIZE;
@@ -192,6 +263,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
 
   // Count for pagination
   const totalCount = useLiveQuery(async () => {
+    const normalizedQuery = normalizeSearchText(debouncedSearch);
     let rangeCollection;
     if (timeRange && !showFullHistory) {
       rangeCollection = db.messages
@@ -201,23 +273,30 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
       rangeCollection = db.messages.where("[importId+ts]").between([importId, Dexie.minKey], [importId, Dexie.maxKey]);
     }
 
-    if (!debouncedSearch) {
+    if (!normalizedQuery) {
       return rangeCollection.count();
     }
 
-    return rangeCollection.filter((m) => m.rawText.toLowerCase().includes(debouncedSearch.toLowerCase())).count();
+    return rangeCollection.filter((m) => fuzzyMatch(m.rawText, normalizedQuery)).count();
   }, [importId, debouncedSearch, timeRange, showFullHistory]);
 
   const totalPages = Math.ceil((totalCount || 0) / PAGE_SIZE);
+  const maxPage = Math.max(0, totalPages - 1);
+
+  useEffect(() => {
+    if (page > maxPage) {
+      setPageAndSync(maxPage);
+    }
+  }, [maxPage, page, setPageAndSync]);
 
   // Group messages for headers
   let lastDateHeader = "";
 
   return (
-    <div className="card bg-base-100 border border-base-300/60 shadow-xl rounded-2xl flex flex-col h-full min-h-[500px]">
+    <div className="card bg-base-100 border border-base-300/60 shadow-xl rounded-2xl flex flex-col h-full min-h-0">
       {/* ... (Header) ... */}
-      <div className="p-4 border-b border-base-300/60 flex flex-col w-full justify-between gap-4">
-        <div className="flex items-center justify-between gap-4 w-full">
+      <div className="p-3 border-b border-base-300/60 flex flex-col w-full justify-between gap-3">
+        <div className="flex items-center justify-between gap-3 w-full">
           <h3 className="text-lg font-semibold hidden md:block">{t("dashboard.chatViewer.title")}</h3>
           <div className="flex items-center gap-2">
             <span className="text-xs opacity-60">{t("dashboard.chatViewer.viewAs")}</span>
@@ -235,7 +314,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-4 flex-wrap w-full justify-between">
+        <div className="flex items-center gap-3 flex-wrap w-full justify-between">
           <div className="relative grow">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/50" />
             <input
@@ -245,7 +324,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
-                setPage(0);
+                setPageAndSync(0);
               }}
               aria-label={t("dashboard.chatViewer.searchAriaLabel")}
             />
@@ -259,7 +338,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
                 }`}
                 onClick={() => {
                   setShowFullHistory(false);
-                  setPage(0);
+                  setPageAndSync(0);
                   setHasJumped(false); // Reset jump trigger if needed, or maybe not.
                 }}
               >
@@ -282,7 +361,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
         </div>
       </div>
 
-      <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-2 bg-base-200/30">
+      <div ref={containerRef} className="flex-1 overflow-y-auto p-3 space-y-1.5 bg-base-200/30">
         {!messages && (
           <div className="space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -299,7 +378,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
         )}
 
         {timeRange && messages && messages.length > 0 && page === 0 && (
-          <div className="flex justify-center py-4">
+          <div className="flex justify-center py-3">
             <div className="badge badge-soft badge-info gap-2 text-xs font-medium">
               {t("dashboard.chatViewer.momentStart")}
             </div>
@@ -328,11 +407,11 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
 
           return (
             <React.Fragment key={msg.id}>
-              {showHeader && <div className="divider text-xs opacity-50 my-4">{currentDateHeader}</div>}
+              {showHeader && <div className="divider text-xs opacity-50 my-3">{currentDateHeader}</div>}
 
               <div className={`chat ${chatClass}`}>
                 {isSystem ? (
-                  <div className="text-xs text-base-content/50 bg-base-200 px-3 py-1 rounded-full text-center max-w-lg mx-auto leading-relaxed my-2">
+                  <div className="text-xs text-base-content/50 bg-base-200 px-2.5 py-1 rounded-full text-center max-w-lg mx-auto leading-relaxed my-1.5">
                     <HighlightedText
                       text={isPrivacyMode ? obfuscateText(msg.rawText || "") : msg.rawText || ""}
                       highlight={debouncedSearch}
@@ -340,7 +419,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
                   </div>
                 ) : (
                   <>
-                    <div className="chat-header text-xs opacity-50 mb-1 flex items-center gap-2">
+                    <div className="chat-header text-xs opacity-50 mb-0.5 flex items-center gap-2">
                       {!isPrimary && (
                         <span
                           className={`font-bold ${nameColorClass.replace("bg-", "text-").replace("text-white", "")}`}
@@ -366,11 +445,11 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
           );
         })}
         {messages && messages.length === 0 && (
-          <div className="text-center text-base-content/50 mt-10">{t("dashboard.chatViewer.noMessages")}</div>
+          <div className="text-center text-base-content/50 mt-8">{t("dashboard.chatViewer.noMessages")}</div>
         )}
 
         {timeRange && messages && messages.length > 0 && page === totalPages - 1 && (
-          <div className="flex justify-center py-4">
+          <div className="flex justify-center py-3">
             <div className="badge badge-soft badge-error gap-2 text-xs opacity-70">
               {t("dashboard.chatViewer.momentEnd")}
             </div>
@@ -378,11 +457,11 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
         )}
       </div>
 
-      <div className="p-3 border-t border-base-300/60 flex items-center justify-between bg-base-100">
+      <div className="p-2.5 border-t border-base-300/60 flex items-center justify-between bg-base-100">
         <button
           className="btn btn-sm btn-ghost"
           disabled={page === 0}
-          onClick={() => setPage((p) => Math.max(0, p - 1))}
+          onClick={() => setPageAndSync(Math.max(0, page - 1))}
         >
           <ChevronLeft className="w-4 h-4" /> {t("common.pagination.prev")}
         </button>
@@ -392,7 +471,7 @@ export const ChatViewer: React.FC<ChatViewerProps> = ({
         <button
           className="btn btn-sm btn-ghost"
           disabled={page >= totalPages - 1}
-          onClick={() => setPage((p) => p + 1)}
+          onClick={() => setPageAndSync(page + 1)}
         >
           {t("common.pagination.next")} <ChevronRight className="w-4 h-4" />
         </button>

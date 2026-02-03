@@ -1,7 +1,7 @@
 {
   "common": {
-    "loading": "Loading...",
-    "error": "Error",
+    "loading": "Loading…",
+    "error": "Something went wrong",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -30,99 +30,137 @@
       "next": "Next",
       "status": "Page {{page}} of {{total}}"
     },
-    "errorSaving": "Error saving settings",
-    "errorDeleting": "Error deleting data"
+    "errorSaving": "Couldn’t save your settings",
+    "errorDeleting": "Couldn’t delete your data"
   },
   "home": {
     "title": "ChatStats",
-    "description": "Analyze your chat history locally. Your data never leaves your device.",
+    "description": "A private look at how your conversations flow. Everything stays on your device.",
     "recentImports": "Recent Imports",
-    "viewDashboard": "View Dashboard",
-    "clearData": "Clear Application Data",
-    "resetConfirm": "Reset everything? All your imported data will be wiped."
+    "viewDashboard": "Open Dashboard",
+    "clearData": "Clear All Data",
+    "resetConfirm": "Clear everything? This removes all imported chats from this device."
   },
   "dashboard": {
     "hero": {
-      "totalTitle": "Total Messages",
-      "totalDesc": "All-time message count across selective history.",
-      "dailyTitle": "Daily Average",
-      "dailyDesc": "Typical message volume on active days."
+      "totalTitle": "Messages Exchanged",
+      "totalDesc": "Everything said in this chat, counted up.",
+      "dailyTitle": "Typical Day",
+      "dailyDesc": "What a normal day of chatting looks like."
     },
-    "participants": "Participants",
+    "participants": "People in the Chat",
     "chatViewer": {
       "title": "Message History",
-      "viewAs": "View as:",
-      "searchPlaceholder": "Search...",
+      "viewAs": "View:",
+      "searchPlaceholder": "Search messages…",
       "timeRange": {
         "thisMoment": "This moment",
-        "fullHistory": "Full History"
+        "fullHistory": "All time"
       },
-      "noMessages": "No messages found.",
-      "momentStart": "Start of moment view",
-      "momentEnd": "End of moment view",
+      "noMessages": "No messages match that.",
+      "momentStart": "Start of this moment",
+      "momentEnd": "End of this moment",
       "searchAriaLabel": "Search messages"
     },
     "participantStats": {
       "radar": {
         "title": {
-          "landscape": "Participation Landscape",
-          "persona": "Chat Persona"
+          "landscape": "Conversation Styles",
+          "persona": "Chat Personality"
         },
         "subtitle": {
-          "landscape": "Mapping volume vs responsiveness",
-          "persona": "Comparing communication styles"
+          "landscape": "Different ways people show up in this chat",
+          "persona": "Everyone has their own rhythm"
         },
         "axes": {
-          "volume": { "label": "Volume", "description": "Total messages sent", "suffix": "msgs" },
-          "speed": { "label": "Speed", "description": "Median reply time" },
-          "initiative": { "label": "Initiative", "description": "Conversations started %" },
-          "verbosity": { "label": "Verbosity", "description": "Avg words per message", "suffix": "words/msg" },
-          "engagement": { "label": "Engagement", "description": "Impact score (Volume + Intiation)" },
-          "replyTime": { "label": "Reply Time", "description": "Avg reply time (seconds)" }
+          "volume": {
+            "label": "Volume",
+            "description": "Total messages sent",
+            "suffix": "msgs"
+          },
+          "speed": {
+            "label": "Speed",
+            "description": "Typical reply time (median)"
+          },
+          "initiative": {
+            "label": "Starts Things",
+            "description": "How often someone kicks off a conversation"
+          },
+          "verbosity": {
+            "label": "Wordy",
+            "description": "Average words per message",
+            "suffix": "words/msg"
+          },
+          "engagement": {
+            "label": "Presence",
+            "description": "A mix of how often and how actively someone chats"
+          },
+          "replyTime": {
+            "label": "Reply Time",
+            "description": "Average reply time (seconds)"
+          }
         }
       },
       "badges": {
-        "volume": { "label": "Heavyweight", "description": "Most active participant (highest message count)" },
-        "yap": { "label": "Yap Master", "description": "Highest average words per message" },
-        "speed": { "label": "The Flash", "description": "Fastest median reply time" },
-        "initiative": {
-          "label": "Instigator",
-          "description": "Starts the most conversations (highest initiation rate)"
+        "volume": {
+          "label": "Most Active",
+          "description": "Sends the most messages in this chat"
         },
-        "ghost": { "label": "Ghost", "description": "Frequently takes >12 hours to reply" },
-        "doubleText": { "label": "Double Texter", "description": "Most likely to send multiple messages in a row" },
-        "nightOwl": { "label": "Vampire", "description": "Night Owl" }
+        "yap": {
+          "label": "Big Talker",
+          "description": "Highest average words per message"
+        },
+        "speed": {
+          "label": "Quick Responder",
+          "description": "Fastest typical reply time (median)"
+        },
+        "initiative": {
+          "label": "Conversation Starter",
+          "description": "Often kicks off new conversations"
+        },
+        "ghost": {
+          "label": "Low-Frequency Texter",
+          "description": "Replies tend to come later rather than sooner"
+        },
+        "doubleText": {
+          "label": "Follow-Up Friendly",
+          "description": "Often sends multiple messages in a row"
+        },
+        "nightOwl": {
+          "label": "Night Owl",
+          "description": "Most active late at night"
+        }
       },
       "table": {
-        "title": "League Table",
-        "rankedBy": "Ranked by Impact",
+        "title": "At a Glance",
+        "rankedBy": "Sorted by presence",
         "headers": {
           "rank": "#",
-          "participant": "Participant",
-          "volume": "Volume",
-          "speed": "Speed",
-          "impact": "Impact",
-          "yap": "Yap"
+          "participant": "Person",
+          "volume": "Msgs",
+          "speed": "Reply Speed",
+          "impact": "Presence",
+          "yap": "Words"
         },
         "tooltips": {
-          "ghost": "Frequent Ghost",
-          "hideConfirm": "Hide {{name}} from analysis? You can unhide them in settings.",
-          "avgReplyTime": "Median Reply Time"
+          "ghost": "Low-frequency replies",
+          "hideConfirm": "Hide {{name}} from analysis? You can undo this in settings.",
+          "avgReplyTime": "Typical Reply Time (median)"
         }
       }
     },
     "shareModal": {
       "preview": {
         "label": "Live Preview",
-        "disclaimer": "captured at {{resolution}} • local-first generation"
+        "disclaimer": "captured at {{resolution}} • generated on your device"
       },
       "title": "Cast of Characters",
       "subtitle": "Tell the story of your group chat.",
       "tabs": {
-        "personas": "Personas",
+        "personas": "Characters",
         "summary": "Summary"
       },
-      "selection": "Choose a Character",
+      "selection": "Pick a Character",
       "format": {
         "label": "Format",
         "story": "Story (9:16)",
@@ -130,12 +168,12 @@
       },
       "summaryView": {
         "title": "Summary View",
-        "description": "Standard leaderboard and stats"
+        "description": "A clean overview of the chat"
       },
       "actions": {
-        "download": "Download Poster",
-        "generating": "Drawing Card...",
-        "saved": "Saved to Device"
+        "download": "Save Poster",
+        "generating": "Drawing card…",
+        "saved": "Saved to device"
       }
     },
     "export": {
@@ -143,58 +181,58 @@
         "volume": {
           "title": "THE PROTAGONIST",
           "hero": "MAIN\nCHARACTER\nENERGY",
-          "tagline": "The group chat doesn't exist without you.",
+          "tagline": "You keep the chat moving.",
           "suffix": "msgs sent"
         },
         "yap": {
-          "title": "THE YAPPER",
-          "hero": "CERTIFIED\nYAPAHOLIC",
-          "tagline": "Why say it in 5 words when 50 will do?",
+          "title": "THE TALKER",
+          "hero": "CERTIFIED\nSTORYTELLER",
+          "tagline": "When you text, you *text*.",
           "suffix": "words / msg"
         },
         "speed": {
           "title": "THE SPEEDSTER",
-          "hero": "CHRONICALLY\nONLINE",
-          "tagline": "Do you even handle lock your phone?",
+          "hero": "ALWAYS\nAROUND",
+          "tagline": "Replies so fast it feels real-time.",
           "suffix": "reply time"
         },
         "night": {
-          "title": "THE VAMPIRE",
-          "hero": "MIDNIGHT\nMENACE",
-          "tagline": "Sleep is for the weak.",
+          "title": "THE NIGHT OWL",
+          "hero": "LATE\nSHIFT",
+          "tagline": "Peak activity after hours.",
           "suffix": "msgs after 12AM"
         },
         "ghost": {
-          "title": "THE GHOST",
-          "hero": "LEFT ON\nREAD",
-          "tagline": "See you in 3-5 business days.",
-          "suffix": "times ghosted"
+          "title": "THE LOW-FREQUENCY TEXTER",
+          "hero": "ON THEIR\nOWN TIME",
+          "tagline": "Replies come on their schedule.",
+          "suffix": "long gaps"
         },
         "double": {
-          "title": "THE DOUBLE TEXTER",
-          "hero": "PLEASE\nRESPOND",
-          "tagline": "Talking to themselves (again).",
+          "title": "THE FOLLOW-UP",
+          "hero": "ONE MORE\nTHING…",
+          "tagline": "Sends the extra message (just in case).",
           "suffix": "double texts"
         }
       },
       "general": {
         "title": "ChatStats",
-        "analyzer": "CHAT ANALYZER",
-        "generatedLocally": "GENERATED LOCALLY",
-        "rankings": "THE\nRANKINGS",
+        "analyzer": "CHAT INSIGHTS",
+        "generatedLocally": "MADE ON YOUR DEVICE",
+        "rankings": "AT A\nGLANCE",
         "wrapped": "CHAT\nWRAPPED",
-        "placeholder": "Add participants to generate personas",
-        "hint": "Select a specific persona to generate a character card.",
+        "placeholder": "Add participants to generate character cards",
+        "hint": "Pick a character to generate a shareable poster.",
         "stats": "GROUP STATS"
       }
     }
   },
   "configPanel": {
-    "title": "Config",
+    "title": "Settings",
     "parsing": {
       "title": "Parsing & formatting",
       "dateFormat": {
-        "label": "Date Format",
+        "label": "Date format",
         "euro": "DD/MM/YYYY (Euro)",
         "us": "MM/DD/YYYY (US)"
       },
@@ -202,15 +240,15 @@
         "label": "Timezone"
       },
       "strictMode": {
-        "label": "Skip problematic lines",
-        "description": "When enabled, unparseable messages are skipped. Disable to stop on errors."
+        "label": "Skip lines that don’t parse",
+        "description": "If enabled, any unparseable messages are skipped. Turn off to stop on the first error."
       }
     },
     "session": {
-      "title": "Conversation Sessions",
+      "title": "Conversation sessions",
       "gapThreshold": {
-        "label": "Session break after silence",
-        "description": "A new conversation starts when there's no activity for this long.",
+        "label": "Start a new session after",
+        "description": "If the chat goes quiet for this long, we treat the next messages as a new session.",
         "markers": {
           "15m": "15 min",
           "2h": "2 hours",
@@ -219,8 +257,8 @@
         }
       },
       "replyWindow": {
-        "label": "Reply detection window",
-        "description": "Messages sent within this time frame are considered replies.",
+        "label": "Reply window",
+        "description": "Messages sent within this time frame are treated as replies.",
         "markers": {
           "5m": "5 min",
           "30m": "30 min",
@@ -231,23 +269,23 @@
     },
     "actions": {
       "reset": "Reset",
-      "saveAndRecompute": "Save & Recompute"
+      "saveAndRecompute": "Save & Recalculate"
     }
   },
   "fileImporter": {
     "dropzone": {
-      "idle": "Drop WhatsApp chat here",
+      "idle": "Drop a WhatsApp export here",
       "or": "or",
-      "browse": "Browse Files",
-      "hint": "Expects .txt file from \"Export Chat\"",
-      "error": "Error"
+      "browse": "Browse files",
+      "hint": "Upload the .txt file from “Export Chat”",
+      "error": "Couldn’t import that file"
     },
     "status": {
-      "parsing": "Parsing...",
-      "analyzing": "Analyzing...",
-      "saving": "Saving...",
-      "done": "Done",
-      "error": "Error"
+      "parsing": "Reading…",
+      "analyzing": "Finding patterns…",
+      "saving": "Saving locally…",
+      "done": "All set",
+      "error": "Something went wrong"
     }
   },
   "tabs": {
@@ -258,62 +296,58 @@
   },
   "overview": {
     "title": "Overview",
-    "subtitle": "Insights at a glance",
-    "shareSummary": "Share Summary",
+    "subtitle": "A quick read on this chat",
+    "shareSummary": "Share Overview",
     "heatmap": {
-      "titleActivity": "Weekly Activity Heatmap",
-      "titleSpeed": "Responsiveness Heatmap",
-      "takeawayActivity": "Brighter squares show your most intense chat times.",
-      "takeawaySpeed": "Darker squares show faster reply times.",
+      "titleActivity": "Weekly Activity",
+      "titleSpeed": "Reply Speed",
+      "takeawayActivity": "Brighter squares = busier chat times.",
+      "takeawaySpeed": "Darker squares = quicker replies.",
       "tooltipMessages": "{{count}} messages",
-      "tooltipSpeed": "Median Reply: {{duration}}",
+      "tooltipSpeed": "Typical reply: {{duration}}",
       "noReplies": "No replies",
       "everyone": "Everyone",
       "labels": {
         "less": "Less",
         "more": "More",
-        "slow": "Slow",
-        "fast": "Fast"
+        "slow": "Slower",
+        "fast": "Faster"
       },
       "metrics": {
-        "volume": "Message Volume",
-        "responsiveness": "Responsiveness"
+        "volume": "Messages",
+        "responsiveness": "Reply speed"
       }
-    },
-    "topics": {
-      "title": "Topic Cloud",
-      "takeaway": "What you talk about most. Click to filter history."
     },
     "volume": {
       "title": "Message Volume",
-      "takeaway": "Visualize the ebb and flow of conversation over time."
+      "takeaway": "See how the conversation rises and falls over time."
     },
     "share": {
       "defaultChatName": "Chat Overview"
     }
   },
   "moments": {
-    "empty": "No interesting moments found yet.",
-    "emptyFilter": "No moments match your filters.",
+    "empty": "No standout moments yet.",
+    "emptyFilter": "No moments match those filters.",
     "types": {
-      "volume_spike": "Volume Spike",
-      "marathon_session": "Marathon Session",
-      "long_gap": "Revival (Gap)",
-      "sentiment_spike": "Sentiment"
+      "volume_spike": "Burst",
+      "marathon_session": "Deep Dive",
+      "long_gap": "Return",
+      "sentiment_spike": "Vibe Shift"
     },
     "titles": {
       "spike": "Activity Burst",
-      "return": "The Return",
-      "marathon": "Marathon Session",
-      "positive": "Very Positive Vibe",
-      "negative": "Heated Debate?"
+      "return": "Picking It Back Up",
+      "marathon": "Deep Dive",
+      "positive": "Good Vibes",
+      "negative": "High-Intensity Moment"
     },
     "descriptions": {
-      "spike": "Unusual volume of {{count}} messages.",
-      "return": "Picking up the thread after {{days}} days.",
-      "marathon": "Deep conversation lasting {{duration}} with {{count}} messages.",
-      "positive": "The conversation was unusually upbeat on this day.",
-      "negative": "Detected more negative or intense sentiment than usual."
+      "spike": "A busier-than-usual stretch: {{count}} messages.",
+      "return": "Chat picked up again after {{days}} days.",
+      "marathon": "A longer conversation: {{duration}} with {{count}} messages.",
+      "positive": "This day felt more upbeat than usual.",
+      "negative": "This day felt more intense than usual."
     },
     "timeline": {
       "format": {
@@ -331,28 +365,32 @@
   },
   "modals": {
     "config": {
-      "title": "Analysis Configuration",
+      "title": "Analysis Settings",
       "dangerZone": "Danger Zone",
-      "destroyData": "Destroy All Data",
-      "destroyDescription": "Delete all analysis from this device.",
+      "destroyData": "Delete Local Data",
+      "destroyDescription": "Removes all imported chats and analysis from this device.",
       "delete": "Delete"
     },
     "visibility": {
       "title": "Participant Visibility",
-      "description": "Hidden participants are excluded from all analysis and statistics.",
+      "description": "Hidden participants are excluded from the analysis and stats.",
       "show": "Show",
       "hide": "Hide"
     }
   },
   "navbar": {
     "imported": "Imported {{date}}",
-    "defaultTitle": "Chat Analysis",
+    "defaultTitle": "Chat Insights",
     "settings": "Settings",
+    "search": {
+      "placeholder": "Start typing to search…",
+      "label": "Search messages"
+    },
     "privacy": {
-      "enable": "Enable Privacy Mode",
-      "disable": "Disable Privacy Mode",
-      "on": "Privacy On",
-      "off": "Privacy Off"
+      "enable": "Turn on privacy mode",
+      "disable": "Turn off privacy mode",
+      "on": "Privacy on",
+      "off": "Privacy off"
     }
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useParams } from "next/navigation";
 import { db, clearDatabase } from "../../lib/db";
 import Dexie from "dexie";
@@ -18,9 +18,10 @@ import { AnalysisConfigModal } from "../../components/Dashboard/AnalysisConfigMo
 import { ParticipantVisibilityModal } from "../../components/Dashboard/ParticipantVisibilityModal";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { extractTopics, getTzMetadata } from "../../lib/analysis";
+import { getTzMetadata } from "../../lib/analysis";
 import { PageLayout } from "../../components/Layout/PageLayout";
 import { useText } from "../../hooks/useText";
+import { cn } from "../../lib/utils";
 
 const COMMON_BOTS = ["Meta AI", "WhatsApp"];
 
@@ -37,12 +38,39 @@ export default function ImportDashboard() {
   // Tab state synced with URL
   const tabParam = searchParams.get("tab");
   const activeTab = tabParam === "moments" || tabParam === "history" || tabParam === "sessions" ? tabParam : "overview";
+  const searchQuery = searchParams.get("q") || "";
+  const isHistoryTab = activeTab === "history";
+  const isMomentsTab = activeTab === "moments";
+  const isStickyTabs = activeTab === "overview" || activeTab === "sessions" || activeTab === "moments";
 
   const setActiveTab = (tab: string) => {
     const newParams = new URLSearchParams(searchParams.toString());
     newParams.set("tab", tab);
+    if (tab === "history") {
+      newParams.delete("start");
+      newParams.delete("end");
+    }
     router.replace(`?${newParams.toString()}`, { scroll: false });
   };
+
+  const searchParamsStr = searchParams.toString();
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      const newParams = new URLSearchParams(searchParamsStr);
+      const trimmed = value.trim();
+
+      if (trimmed) {
+        newParams.set("q", value);
+        newParams.set("tab", "history");
+      } else {
+        newParams.delete("q");
+      }
+
+      router.replace(`?${newParams.toString()}`, { scroll: false });
+    },
+    [router, searchParamsStr],
+  );
 
   const [isRecomputing, setIsRecomputing] = useState(false);
 
@@ -194,30 +222,8 @@ export default function ImportDashboard() {
       timelineData,
       hourlyData,
       heatmaps,
-      topics: [],
     };
   }, [importId, importRecord]);
-
-  // Topics Data
-  const topicsData = useLiveQuery(async () => {
-    if (!importId) return undefined;
-    const [allMessages, participants, stopwordsList] = await Promise.all([
-      db.messages.where("importId").equals(importId).toArray(),
-      db.participants.where("importId").equals(importId).toArray(),
-      db.stopwords.toArray(),
-    ]);
-
-    const hiddenParticipantIds = new Set(
-      participants
-        .filter((p) => p.isHidden || COMMON_BOTS.some((bot) => p.displayName.toLowerCase().includes(bot.toLowerCase())))
-        .map((p) => p.id),
-    );
-
-    const messages = allMessages.filter((m) => !m.senderId || !hiddenParticipantIds.has(m.senderId));
-    const customStopwords = new Set(stopwordsList.map((s) => s.word));
-
-    return await extractTopics(messages, customStopwords);
-  }, [importId]);
 
   // Participants Data
   const participantsData = useLiveQuery(async () => {
@@ -330,26 +336,41 @@ export default function ImportDashboard() {
       <PageLayout
         maxWidth="6xl"
         preserveScroll={true}
+        disableScroll={isHistoryTab}
         header={
           <Navbar
             filename={importRecord.filename}
             importedAt={importRecord.importedAt}
             onSettingsClick={() => setIsConfigOpen(true)}
+            searchQuery={searchQuery}
+            onSearchChange={handleSearchChange}
           />
         }
       >
-        <div className="flex flex-col gap-6 pb-20">
-          <div role="tablist" className="tabs tabs-boxed bg-base-200/50 p-1 inline-block w-fit">
-            {["overview", "moments", "sessions", "history"].map((tabKey) => (
-              <a
-                key={tabKey}
-                role="tab"
-                className={`tab ${activeTab === tabKey ? "tab-active bg-base-100 shadow-sm" : ""}`}
-                onClick={() => setActiveTab(tabKey)}
-              >
-                {t(`tabs.${tabKey}`)}
-              </a>
-            ))}
+        <div
+          className={cn(
+            "flex flex-col min-h-0",
+            isHistoryTab ? "gap-3 pb-6" : isMomentsTab ? "gap-3 pb-16" : "gap-6 pb-20",
+          )}
+        >
+          <div
+            className={cn(
+              "w-full",
+              isStickyTabs && "sticky top-0 z-20 bg-base-100/95 backdrop-blur pb-3 pt-1",
+            )}
+          >
+            <div role="tablist" className="tabs tabs-boxed bg-base-200/50 p-1 inline-block w-fit">
+              {["overview", "moments", "sessions", "history"].map((tabKey) => (
+                <a
+                  key={tabKey}
+                  role="tab"
+                  className={`tab ${activeTab === tabKey ? "tab-active bg-base-100 shadow-sm" : ""}`}
+                  onClick={() => setActiveTab(tabKey)}
+                >
+                  {t(`tabs.${tabKey}`)}
+                </a>
+              ))}
+            </div>
           </div>
 
           <div className="flex-1 min-h-0">
@@ -374,30 +395,18 @@ export default function ImportDashboard() {
                   hourlyData={stats.hourlyData}
                   heatmapData={stats.heatmaps}
                   participants={participantsData}
-                  topics={topicsData || []}
-                  topicsLoading={topicsData === undefined}
-                  onTopicClick={(topic) => {
-                    const newParams = new URLSearchParams(searchParams.toString());
-                    newParams.set("tab", "history");
-                    newParams.set("q", topic);
-                    router.replace(`?${newParams.toString()}`);
-                  }}
-                  onBlockTopic={async (topic) => {
-                    try {
-                      await db.stopwords.add({ word: topic.toLowerCase() });
-                    } catch {
-                      // Ignore
-                    }
-                  }}
                 />
               </section>
             )}
 
-            {activeTab === "sessions" && <SessionsList importId={importId} />}
-            {activeTab === "moments" && <MomentsFeed importId={importId} />}
+            {activeTab === "sessions" && <SessionsList importId={importId} pageParamKey="sessionsPage" />}
+            {activeTab === "moments" && (
+              <MomentsFeed importId={importId} stickyFilter pageParamKey="momentsPage" />
+            )}
             {activeTab === "history" && (
               <ChatViewer
                 importId={importId}
+                pageParamKey="historyPage"
                 timeRange={
                   searchParams.get("start") && searchParams.get("end")
                     ? {

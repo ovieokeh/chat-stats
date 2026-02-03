@@ -10,13 +10,24 @@ import { FilterBar } from "../UI/FilterBar";
 import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useText } from "../../hooks/useText";
+import { cn } from "../../lib/utils";
 import { Skeleton } from "../UI/Skeleton";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface MomentsFeedProps {
   importId: number;
+  stickyFilter?: boolean;
+  pageParamKey?: string;
 }
 
-export const MomentsFeed: React.FC<MomentsFeedProps> = ({ importId }) => {
+export const MomentsFeed: React.FC<MomentsFeedProps> = ({
+  importId,
+  stickyFilter = false,
+  pageParamKey = "momentsPage",
+}) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const searchParamsStr = searchParams.toString();
   // Query messages and sessions to compute moments on the fly
   // Optimization: In a real heavy app, we'd compute this once and store in derivedMetrics.
   // For MVP with <50k messages, this might be fast enough or we can wrap in a heavy-calculation effect.
@@ -40,9 +51,23 @@ export const MomentsFeed: React.FC<MomentsFeedProps> = ({ importId }) => {
   }, [importId]);
 
   const [filters, setFilters] = React.useState<Record<string, string[]>>({});
-  const [page, setPage] = React.useState(0);
+  const [page, setPage] = React.useState(() => {
+    const raw = searchParams.get(pageParamKey);
+    const parsed = raw ? parseInt(raw, 10) : 1;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed - 1 : 0;
+  });
+  const hasInitializedFilters = React.useRef(false);
   const ITEMS_PER_PAGE = 20;
   const { t } = useText();
+  const setPageAndSync = React.useCallback(
+    (nextPage: number) => {
+      setPage(nextPage);
+      const params = new URLSearchParams(searchParamsStr);
+      params.set(pageParamKey, String(nextPage + 1));
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [pageParamKey, router, searchParamsStr],
+  );
 
   const filteredData = useMemo(() => {
     if (!data) return [];
@@ -57,13 +82,36 @@ export const MomentsFeed: React.FC<MomentsFeedProps> = ({ importId }) => {
 
   // Handle page reset on filter change
   React.useEffect(() => {
-    setPage(0);
-  }, [filters]);
+    if (hasInitializedFilters.current) {
+      setPageAndSync(0);
+    } else {
+      hasInitializedFilters.current = true;
+    }
+  }, [filters, setPageAndSync]);
+
+  React.useEffect(() => {
+    const raw = searchParams.get(pageParamKey);
+    const parsed = raw ? parseInt(raw, 10) : 1;
+    const nextPage = Number.isFinite(parsed) && parsed > 0 ? parsed - 1 : 0;
+    setPage((current) => (current === nextPage ? current : nextPage));
+  }, [pageParamKey, searchParams]);
 
   const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
   const displayMoments = useMemo(() => {
     return filteredData.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE);
   }, [filteredData, page]);
+  const maxPage = Math.max(0, totalPages - 1);
+
+  React.useEffect(() => {
+    if (page > maxPage) {
+      setPageAndSync(maxPage);
+    }
+  }, [maxPage, page, setPageAndSync]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [page]);
 
   // Group by Date for Timeline
   const groupedMoments = useMemo(() => {
@@ -157,13 +205,20 @@ export const MomentsFeed: React.FC<MomentsFeedProps> = ({ importId }) => {
   }
 
   return (
-    <div className="space-y-6">
-      <FilterBar
-        groups={typeGroups}
-        selected={filters}
-        onChange={(k, v) => setFilters((prev) => ({ ...prev, [k]: v }))}
-        className="border-b border-base-200/50"
-      />
+    <div className="space-y-4">
+      <div
+        className={cn(
+          "w-full",
+          stickyFilter && "sticky top-12 z-10 bg-base-100/95 backdrop-blur pb-2 pt-1",
+        )}
+      >
+        <FilterBar
+          groups={typeGroups}
+          selected={filters}
+          onChange={(k, v) => setFilters((prev) => ({ ...prev, [k]: v }))}
+          className="border-b border-base-200/50"
+        />
+      </div>
 
       {filteredData.length === 0 ? (
         <div className="text-center py-10 text-base-content/50">{t("moments.emptyFilter")}</div>
@@ -226,7 +281,7 @@ export const MomentsFeed: React.FC<MomentsFeedProps> = ({ importId }) => {
               <button
                 className="join-item btn btn-sm btn-ghost"
                 disabled={page === 0}
-                onClick={() => setPage((p) => p - 1)}
+                onClick={() => setPageAndSync(Math.max(0, page - 1))}
               >
                 « {t("common.pagination.prev")}
               </button>
@@ -236,7 +291,7 @@ export const MomentsFeed: React.FC<MomentsFeedProps> = ({ importId }) => {
               <button
                 className="join-item btn btn-sm btn-ghost"
                 disabled={page >= totalPages - 1}
-                onClick={() => setPage((p) => p + 1)}
+                onClick={() => setPageAndSync(page + 1)}
               >
                 {t("common.pagination.next")} »
               </button>

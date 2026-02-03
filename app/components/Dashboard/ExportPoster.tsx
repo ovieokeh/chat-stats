@@ -35,7 +35,6 @@ interface ExportPosterProps {
       activeDays: number;
       avgDailyMessages: number;
     };
-    topics?: { text: string; count: number }[];
     chatName?: string;
   };
 }
@@ -340,7 +339,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
               )}
             </div>
 
-            {/* Right Col: Stats & Topics */}
+            {/* Right Col: Stats */}
             <div className="flex flex-col gap-10">
               {/* Group Stats */}
               <div className="space-y-8">
@@ -367,25 +366,6 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
                     </div>
                   </div>
                 </div>
-
-                {/* Hot Topics */}
-                {data.topics && data.topics.length > 0 && (
-                  <div>
-                    <h2 className="text-xs font-black uppercase tracking-[0.2em] opacity-40 mb-4 border-b border-ink pb-2">
-                      {t("overview.topics.title")}
-                    </h2>
-                    <div className="flex flex-wrap gap-2">
-                      {data.topics.slice(0, 8).map((topic, i) => (
-                        <span
-                          key={i}
-                          className="px-3 py-1.5 rounded-lg bg-ink-5 border border-ink text-[11px] font-bold uppercase tracking-tight opacity-70"
-                        >
-                          #{topic.text}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Visualization Placeholder / Quote */}

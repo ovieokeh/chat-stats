@@ -6,7 +6,6 @@ import { ChartCard } from "../UI/ChartCard";
 import { ResponsiveContainer, XAxis, Tooltip, AreaChart, Area, CartesianGrid } from "recharts";
 
 import { Heatmap } from "./Heatmap";
-import { TopicCloud } from "./TopicCloud";
 import { ShareModal } from "./ShareModal";
 import { Share2 } from "lucide-react";
 
@@ -47,10 +46,6 @@ interface OverviewProps {
     carryScore: number;
     leftOnReadCount: number;
   }>;
-  topics: { text: string; count: number }[];
-  topicsLoading?: boolean;
-  onTopicClick: (topic: string) => void;
-  onBlockTopic: (topic: string) => void;
 }
 
 import { formatDurationHuman } from "../../lib/format";
@@ -63,10 +58,6 @@ export const Overview: React.FC<OverviewProps> = ({
   timelineData,
   heatmapData,
   participants = [],
-  topics = [],
-  topicsLoading,
-  onTopicClick,
-  onBlockTopic,
 }) => {
   const [metric, setMetric] = useState<"volume" | "speed">("volume");
   const [participantId, setParticipantId] = useState<string>("all");
@@ -127,72 +118,53 @@ export const Overview: React.FC<OverviewProps> = ({
         type="overview"
         data={{
           stats,
-          topics: topics.slice(0, 10),
           participants,
           chatName: t("overview.share.defaultChatName"),
         }}
       />
 
       <div className="grid grid-cols-1 gap-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
-            <ChartCard
-              title={metric === "volume" ? t("overview.heatmap.titleActivity") : t("overview.heatmap.titleSpeed")}
-              takeaway={
-                metric === "volume" ? t("overview.heatmap.takeawayActivity") : t("overview.heatmap.takeawaySpeed")
-              }
-              action={
-                <div className="flex items-center gap-2">
-                  {/* Metric Toggle */}
-                  <div className="join">
-                    <button
-                      className={`btn btn-xs join-item ${metric === "volume" ? "btn-primary" : "btn-ghost"}`}
-                      onClick={() => setMetric("volume")}
-                      title={t("overview.heatmap.metrics.volume")}
-                    >
-                      <MessageSquare className="w-3 h-3" />
-                    </button>
-                    <button
-                      className={`btn btn-xs join-item ${metric === "speed" ? "btn-primary" : "btn-ghost"}`}
-                      onClick={() => setMetric("speed")}
-                      title={t("overview.heatmap.metrics.responsiveness")}
-                    >
-                      <Clock className="w-3 h-3" />
-                    </button>
-                  </div>
-
-                  {/* Participant Filter */}
-                  <select
-                    className="select select-bordered select-xs max-w-[120px]"
-                    value={participantId}
-                    onChange={(e) => setParticipantId(e.target.value)}
-                  >
-                    <option value="all">{t("overview.heatmap.everyone")}</option>
-                    {participants.map((p) => (
-                      <option key={p.id} value={p.id.toString()}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              }
-            >
-              <Heatmap data={transformedData} metricType={metric} />
-            </ChartCard>
-          </div>
-          <div className="lg:col-span-1">
-            <ChartCard title={t("overview.topics.title")} takeaway={t("overview.topics.takeaway")}>
-              <div className="h-full max-h-[300px] -m-2">
-                <TopicCloud
-                  topics={topics}
-                  onTopicClick={onTopicClick}
-                  onBlockTopic={onBlockTopic}
-                  isLoading={topicsLoading}
-                />
+        <ChartCard
+          title={metric === "volume" ? t("overview.heatmap.titleActivity") : t("overview.heatmap.titleSpeed")}
+          takeaway={metric === "volume" ? t("overview.heatmap.takeawayActivity") : t("overview.heatmap.takeawaySpeed")}
+          action={
+            <div className="flex items-center gap-2">
+              {/* Metric Toggle */}
+              <div className="join">
+                <button
+                  className={`btn btn-xs join-item ${metric === "volume" ? "btn-primary" : "btn-ghost"}`}
+                  onClick={() => setMetric("volume")}
+                  title={t("overview.heatmap.metrics.volume")}
+                >
+                  <MessageSquare className="w-3 h-3" />
+                </button>
+                <button
+                  className={`btn btn-xs join-item ${metric === "speed" ? "btn-primary" : "btn-ghost"}`}
+                  onClick={() => setMetric("speed")}
+                  title={t("overview.heatmap.metrics.responsiveness")}
+                >
+                  <Clock className="w-3 h-3" />
+                </button>
               </div>
-            </ChartCard>
-          </div>
-        </div>
+
+              {/* Participant Filter */}
+              <select
+                className="select select-bordered select-xs max-w-[120px]"
+                value={participantId}
+                onChange={(e) => setParticipantId(e.target.value)}
+              >
+                <option value="all">{t("overview.heatmap.everyone")}</option>
+                {participants.map((p) => (
+                  <option key={p.id} value={p.id.toString()}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          }
+        >
+          <Heatmap data={transformedData} metricType={metric} />
+        </ChartCard>
       </div>
 
       <ChartCard title={t("overview.volume.title")} takeaway={t("overview.volume.takeaway")}>

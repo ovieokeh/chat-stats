@@ -15,15 +15,30 @@ import { useText } from "../../hooks/useText";
 
 interface SessionsListProps {
   importId: number;
+  pageParamKey?: string;
 }
 
 const ITEMS_per_PAGE = 20;
 
-export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
+export const SessionsList: React.FC<SessionsListProps> = ({ importId, pageParamKey = "sessionsPage" }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [page, setPage] = useState(0);
+  const searchParamsStr = searchParams.toString();
+  const [page, setPage] = useState(() => {
+    const raw = searchParams.get(pageParamKey);
+    const parsed = raw ? parseInt(raw, 10) : 1;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed - 1 : 0;
+  });
   const { t } = useText();
+  const setPageAndSync = React.useCallback(
+    (nextPage: number) => {
+      setPage(nextPage);
+      const params = new URLSearchParams(searchParamsStr);
+      params.set(pageParamKey, String(nextPage + 1));
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [pageParamKey, router, searchParamsStr],
+  );
 
   // Fetch participants for name resolution
   const participants = useLiveQuery(() => db.participants.where("importId").equals(importId).toArray(), [importId]);
@@ -78,6 +93,25 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
   };
 
   const totalPages = sessions ? Math.ceil(sessions.count / ITEMS_per_PAGE) : 0;
+  const maxPage = Math.max(0, totalPages - 1);
+
+  React.useEffect(() => {
+    const raw = searchParams.get(pageParamKey);
+    const parsed = raw ? parseInt(raw, 10) : 1;
+    const nextPage = Number.isFinite(parsed) && parsed > 0 ? parsed - 1 : 0;
+    setPage((current) => (current === nextPage ? current : nextPage));
+  }, [pageParamKey, searchParams]);
+
+  React.useEffect(() => {
+    if (page > maxPage) {
+      setPageAndSync(maxPage);
+    }
+  }, [maxPage, page, setPageAndSync]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [page]);
 
   if (!sessions) {
     return (
@@ -174,7 +208,7 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
           <button
             className="join-item btn btn-sm btn-ghost"
             disabled={page === 0}
-            onClick={() => setPage((p) => p - 1)}
+            onClick={() => setPageAndSync(Math.max(0, page - 1))}
           >
             « Prev
           </button>
@@ -184,7 +218,7 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
           <button
             className="join-item btn btn-sm btn-ghost"
             disabled={page >= totalPages - 1}
-            onClick={() => setPage((p) => p + 1)}
+            onClick={() => setPageAndSync(page + 1)}
           >
             Next »
           </button>
