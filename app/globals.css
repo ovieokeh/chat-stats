@@ -198,6 +198,21 @@ h6,
   background-color: color-mix(in oklab, currentColor 5%, transparent);
 }
 
+@keyframes story-progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.story-progress {
+  animation-name: story-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
 .bg-ink-10 {
   background-color: color-mix(in oklab, currentColor 10%, transparent);
 }

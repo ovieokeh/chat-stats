@@ -174,7 +174,10 @@ export const getIsoDate = (ts: number, timezone: string): string => {
  * Gets hour, day, and date in the specific timezone.
  * Optimized with caching to avoid re-instantiating Intl.DateTimeFormat.
  */
-export const getTzMetadata = (ts: number, timezone: string) => {
+export const getTzMetadata = (
+  ts: number,
+  timezone: string,
+): { hour: number; day: number; year: string; date: string } => {
   const cacheKey = timezone || "UTC";
   let formatter = metadataFormatterCache.get(cacheKey);
 
@@ -204,7 +207,7 @@ export const getTzMetadata = (ts: number, timezone: string) => {
   }
 
   const p = formatter.formatToParts(new Date(ts));
-  const res = { hour: 0, day: 0, date: "" };
+  const res = { hour: 0, day: 0, date: "", year: "" };
   const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 
   let year = "",

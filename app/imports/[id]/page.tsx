@@ -11,13 +11,14 @@ import { ChatViewer } from "../../components/Dashboard/ChatViewer";
 import { SessionsList } from "../../components/Dashboard/SessionsList";
 import { MomentsFeed } from "../../components/Dashboard/MomentsFeed";
 import { format } from "date-fns";
-import { Loader2, Users } from "lucide-react";
+import { Loader2, Users, Sparkles } from "lucide-react";
 import { ExportConfig } from "../../types";
 import { Navbar } from "../../components/Dashboard/Navbar";
 import { AnalysisConfigModal } from "../../components/Dashboard/AnalysisConfigModal";
 import { ParticipantVisibilityModal } from "../../components/Dashboard/ParticipantVisibilityModal";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { getTzMetadata } from "../../lib/analysis";
 import { PageLayout } from "../../components/Layout/PageLayout";
 import { useText } from "../../hooks/useText";
@@ -353,23 +354,29 @@ export default function ImportDashboard() {
             isHistoryTab ? "gap-3 pb-6" : isMomentsTab ? "gap-3 pb-16" : "gap-6 pb-20",
           )}
         >
-          <div
-            className={cn(
-              "w-full",
-              isStickyTabs && "sticky top-0 z-20 bg-base-100/95 backdrop-blur pb-3 pt-1",
-            )}
-          >
-            <div role="tablist" className="tabs tabs-boxed bg-base-200/50 p-1 inline-block w-fit">
-              {["overview", "moments", "sessions", "history"].map((tabKey) => (
-                <a
-                  key={tabKey}
-                  role="tab"
-                  className={`tab ${activeTab === tabKey ? "tab-active bg-base-100 shadow-sm" : ""}`}
-                  onClick={() => setActiveTab(tabKey)}
+          <div className={cn("w-full", isStickyTabs && "sticky top-0 z-20 bg-base-100/95 backdrop-blur pb-3 pt-1")}>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div role="tablist" className="tabs tabs-boxed bg-base-200/50 p-1 inline-block w-fit">
+                {["overview", "moments", "sessions", "history"].map((tabKey) => (
+                  <a
+                    key={tabKey}
+                    role="tab"
+                    className={`tab ${activeTab === tabKey ? "tab-active bg-base-100 shadow-sm" : ""}`}
+                    onClick={() => setActiveTab(tabKey)}
+                  >
+                    {t(`tabs.${tabKey}`)}
+                  </a>
+                ))}
+              </div>
+              {importId && (
+                <Link
+                  href={`/imports/${importId}/wrapped`}
+                  className="ml-auto btn btn-primary btn-sm rounded-full gap-2"
                 >
-                  {t(`tabs.${tabKey}`)}
-                </a>
-              ))}
+                  <Sparkles className="w-4 h-4" />
+                  ChatWrapped
+                </Link>
+              )}
             </div>
           </div>
 
@@ -400,9 +407,7 @@ export default function ImportDashboard() {
             )}
 
             {activeTab === "sessions" && <SessionsList importId={importId} pageParamKey="sessionsPage" />}
-            {activeTab === "moments" && (
-              <MomentsFeed importId={importId} stickyFilter pageParamKey="momentsPage" />
-            )}
+            {activeTab === "moments" && <MomentsFeed importId={importId} stickyFilter pageParamKey="momentsPage" />}
             {activeTab === "history" && (
               <ChatViewer
                 importId={importId}
