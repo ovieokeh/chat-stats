@@ -35,7 +35,81 @@
   },
   "home": {
     "title": "ChatStats",
+    "tagline": "Interesting insights from your WhatsApp chats",
     "description": "A private look at how your conversations flow. Everything stays on your device.",
+    "hero": {
+      "title": "Your WhatsApp, as a story.",
+      "subtitle": "Drop a chat export and get shareable stats on reply speed, night‑owl energy, and who starts the chaos.",
+      "ctaUpload": "Upload WhatsApp export",
+      "badgePrivate": "Privacy‑first",
+      "badgeLocal": "On‑device",
+      "badgeShareable": "Made to share",
+      "statLabel": "messages in one chat",
+      "statCaption": "Demo chat"
+    },
+    "importer": {
+      "title": "Drop your WhatsApp export",
+      "subtitle": "No login. No cloud. Just insights."
+    },
+    "insights": {
+      "title": "What you’ll learn",
+      "subtitle": "Big numbers, tiny truths.",
+      "replySpeed": {
+        "title": "Reply Speed",
+        "delta": "↓ 22% vs last month",
+        "explain": "You’re getting snappier."
+      },
+      "nightOwl": {
+        "title": "Night Owl Energy",
+        "explain": "Most messages after 11 PM."
+      },
+      "doubleText": {
+        "title": "Double‑Text Rate",
+        "explain": "You love a follow‑up."
+      },
+      "starter": {
+        "title": "Conversation Starter",
+        "explain": "You kick things off."
+      },
+      "peakDay": {
+        "title": "Busiest Day",
+        "explain": "That’s the social peak."
+      },
+      "longGap": {
+        "title": "Longest Gap",
+        "explain": "The silence breaker."
+      }
+    },
+    "how": {
+      "title": "Export from WhatsApp in 30 seconds",
+      "subtitle": "Choose “Without media” for the cleanest upload.",
+      "ios": {
+        "title": "iPhone",
+        "step1": "Open the chat → tap the name",
+        "step2": "Scroll to “Export Chat”",
+        "step3": "Choose “Without Media”"
+      },
+      "android": {
+        "title": "Android",
+        "step1": "Open the chat → ⋮ menu",
+        "step2": "Tap “More” → “Export chat”",
+        "step3": "Choose “Without media”"
+      }
+    },
+    "share": {
+      "title": "Designed to be shared",
+      "subtitle": "Instant posters for stories and group chats."
+    },
+    "privacy": {
+      "title": "Private by design",
+      "subtitle": "Your data never leaves your device.",
+      "bullets": {
+        "local": "On‑device processing",
+        "login": "No account needed",
+        "delete": "Delete anytime",
+        "privacyMode": "Privacy mode for screenshots"
+      }
+    },
     "recentImports": "Recent Imports",
     "viewDashboard": "Open Dashboard",
     "clearData": "Clear All Data",
@@ -383,7 +457,7 @@
     "defaultTitle": "Chat Insights",
     "settings": "Settings",
     "search": {
-      "placeholder": "Start typing to search…",
+      "placeholder": "Search your messages…",
       "label": "Search messages"
     },
     "privacy": {

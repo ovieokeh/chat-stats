@@ -49,7 +49,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
         {(delta || explanation) && (
           <div className="flex flex-col gap-1 mt-auto">
             {delta && <span className="text-sm font-medium">{delta}</span>}
-            {explanation && <span className="text-sm text-base-content/70">{explanation}</span>}
+            {explanation && <span className="text-sm text-base-content/70 italic">{explanation}</span>}
           </div>
         )}
       </div>
