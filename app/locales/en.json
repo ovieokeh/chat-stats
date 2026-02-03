@@ -34,7 +34,7 @@
     "errorDeleting": "Couldn’t delete your data"
   },
   "home": {
-    "title": "ChatStats",
+    "title": "ChatWrapped",
     "tagline": "Interesting insights from your WhatsApp chats",
     "description": "A private look at how your conversations flow. Everything stays on your device.",
     "hero": {
@@ -290,7 +290,7 @@
         }
       },
       "general": {
-        "title": "ChatStats",
+        "title": "ChatWrapped",
         "analyzer": "CHAT INSIGHTS",
         "generatedLocally": "MADE ON YOUR DEVICE",
         "rankings": "AT A\nGLANCE",

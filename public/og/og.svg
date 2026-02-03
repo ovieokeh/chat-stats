@@ -1,0 +1,35 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f1115" />
+      <stop offset="100%" stop-color="#1a1d24" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#23e3c9" />
+      <stop offset="100%" stop-color="#8f5bff" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" rx="48" fill="url(#bg)" />
+  <rect x="80" y="80" width="360" height="44" rx="22" fill="#242a35" />
+  <text x="96" y="110" fill="#9aa3b2" font-family="Satoshi, sans-serif" font-size="18" letter-spacing="3">
+    CHATWRAPPED
+  </text>
+  <text x="80" y="230" fill="#f5f5f7" font-family="Satoshi, sans-serif" font-size="64" font-weight="700" letter-spacing="-2">
+    Your WhatsApp,
+  </text>
+  <text x="80" y="300" fill="#f5f5f7" font-family="Satoshi, sans-serif" font-size="64" font-weight="700" letter-spacing="-2">
+    as a story.
+  </text>
+  <rect x="80" y="340" width="520" height="16" rx="8" fill="url(#accent)" />
+  <text x="80" y="410" fill="#b3bccb" font-family="General Sans, sans-serif" font-size="26">
+    Shareable insights. Private by design.
+  </text>
+  <rect x="720" y="130" width="400" height="400" rx="32" fill="#141821" stroke="#2a2f3a" />
+  <rect x="760" y="180" width="240" height="18" rx="9" fill="#2a2f3a" />
+  <rect x="760" y="220" width="320" height="12" rx="6" fill="#202531" />
+  <rect x="760" y="260" width="280" height="12" rx="6" fill="#202531" />
+  <rect x="760" y="310" width="280" height="120" rx="18" fill="#0f1115" />
+  <text x="80" y="570" fill="#7c8797" font-family="Satoshi, sans-serif" font-size="14" letter-spacing="2">
+    chatstats.app
+  </text>
+</svg>

@@ -143,7 +143,7 @@ export default function Home() {
                 <div className="aspect-[4/3] relative">
                   <Image
                     src="/landing/dashboard.webp"
-                    alt="ChatStats dashboard preview"
+                    alt="ChatWrapped dashboard preview"
                     fill
                     className="object-cover"
                   />
