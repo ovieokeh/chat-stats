@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "WorkDashboard",
@@ -17,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} antialiased bg-base-200 h-screen overflow-hidden text-base-content`}>
+      <body className="antialiased bg-base-200 h-screen overflow-hidden text-base-content">
         <Providers>
           <div className="w-full h-full bg-base-100 flex flex-col">
             <main className="flex-1 relative h-full w-full overflow-hidden">{children}</main>

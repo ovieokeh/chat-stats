@@ -163,7 +163,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, data })
         {/* Right: Controls */}
         <div className="flex-1 p-6 sm:p-10 flex flex-col relative bg-base-100 overflow-hidden">
           <div className="mb-6">
-            <h2 className="text-2xl sm:text-4xl font-black tracking-tighter mb-1">{t("dashboard.shareModal.title")}</h2>
+            <h2 className="text-2xl sm:text-4xl font-black font-display tracking-tighter mb-1">
+              {t("dashboard.shareModal.title")}
+            </h2>
             <p className="opacity-50 text-xs sm:text-sm font-medium">{t("dashboard.shareModal.subtitle")}</p>
           </div>
 

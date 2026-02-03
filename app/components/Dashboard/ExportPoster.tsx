@@ -70,7 +70,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
       getDetail: (_p) => t("dashboard.export.personas.volume.suffix"),
       sort: (a, b) => b.msgCount - a.msgCount,
       bgClass: "bg-primary text-primary-content",
-      accentClass: "bg-white/20",
+      accentClass: "bg-ink-20",
     },
     yap: {
       roleTitle: t("dashboard.export.personas.yap.title"),
@@ -81,7 +81,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
       getDetail: (_p) => t("dashboard.export.personas.yap.suffix"),
       sort: (a, b) => b.yapIndex - a.yapIndex,
       bgClass: "bg-secondary text-secondary-content",
-      accentClass: "bg-white/20",
+      accentClass: "bg-ink-20",
     },
     speed: {
       roleTitle: t("dashboard.export.personas.speed.title"),
@@ -101,7 +101,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
         return a.medianReplyTime - b.medianReplyTime;
       },
       bgClass: "bg-accent text-accent-content",
-      accentClass: "bg-white/20",
+      accentClass: "bg-ink-20",
     },
     night: {
       roleTitle: t("dashboard.export.personas.night.title"),
@@ -112,7 +112,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
       getDetail: (_p) => t("dashboard.export.personas.night.suffix"),
       sort: (a, b) => b.nightOwlCount - a.nightOwlCount,
       bgClass: "bg-neutral text-neutral-content",
-      accentClass: "bg-white/10",
+      accentClass: "bg-ink-10",
     },
     ghost: {
       roleTitle: t("dashboard.export.personas.ghost.title"),
@@ -123,7 +123,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
       getDetail: (_p) => t("dashboard.export.personas.ghost.suffix"),
       sort: (a, b) => b.ghostCount - a.ghostCount,
       bgClass: "bg-base-300 text-base-content",
-      accentClass: "bg-black/10",
+      accentClass: "bg-ink-10",
     },
     double: {
       roleTitle: t("dashboard.export.personas.double.title"),
@@ -134,7 +134,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
       getDetail: (_p) => t("dashboard.export.personas.double.suffix"),
       sort: (a, b) => b.doubleTextCount - a.doubleTextCount,
       bgClass: "bg-info text-info-content",
-      accentClass: "bg-white/20",
+      accentClass: "bg-ink-20",
     },
   };
 
@@ -165,13 +165,13 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
     return (
       <div
         id="export-poster"
-        className={`flex flex-col font-sans relative overflow-hidden bg-neutral text-neutral-content items-center justify-center`}
+        className={`flex flex-col font-body relative overflow-hidden bg-neutral text-neutral-content items-center justify-center`}
         style={{
           width: `${dimensions.width}px`,
           height: `${dimensions.height}px`,
         }}
       >
-        <p className="text-4xl font-bold opacity-50">{t("dashboard.export.general.placeholder")}</p>
+        <p className="text-4xl font-bold font-display opacity-50">{t("dashboard.export.general.placeholder")}</p>
       </div>
     );
   }
@@ -179,7 +179,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
   return (
     <div
       id="export-poster"
-      className={`flex flex-col font-sans relative overflow-hidden ${type === "persona" ? config.bgClass : "bg-neutral text-neutral-content"}`}
+      className={`flex flex-col font-body relative overflow-hidden ${type === "persona" ? config.bgClass : "bg-neutral text-neutral-content"}`}
       style={{
         width: `${dimensions.width}px`,
         height: `${dimensions.height}px`,
@@ -211,7 +211,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
           {/* Role Header */}
           <div className={isStories ? "mb-8" : "mb-4"}>
             <div
-              className={`inline-block px-6 py-2 rounded-full border-2 border-current font-black tracking-widest uppercase text-xl mb-6 opacity-80 backdrop-blur-md`}
+              className={`inline-block px-6 py-2 rounded-full border-2 border-current font-black font-display tracking-widest uppercase text-xl mb-6 opacity-80 backdrop-blur-md`}
             >
               {config.roleTitle}
             </div>
@@ -221,7 +221,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
           <div className="flex-1 flex flex-col justify-center">
             {/* Massive Hero Title */}
             <h1
-              className={`${isStories ? "text-[140px]" : "text-[80px]"} leading-[0.85] font-black tracking-tighter ${isStories ? "mb-12" : "mb-6"} uppercase mix-blend-overlay opacity-90`}
+              className={`${isStories ? "text-[140px]" : "text-[80px]"} leading-[0.85] font-black font-display tracking-tighter ${isStories ? "mb-12" : "mb-6"} uppercase mix-blend-overlay opacity-90`}
             >
               {config.heroTitle}
             </h1>
@@ -236,7 +236,9 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
                 </span>
               </div>
               <div className="flex-1 pb-4">
-                <p className={`${isStories ? "text-6xl" : "text-4xl"} font-black tracking-tight leading-none mb-2`}>
+                <p
+                  className={`${isStories ? "text-6xl" : "text-4xl"} font-black font-display tracking-tight leading-none mb-2`}
+                >
                   {winner.name}
                 </p>
                 <p className={`${isStories ? "text-3xl" : "text-xl"} font-medium opacity-80 italic`}>
@@ -247,10 +249,12 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
 
             {/* The Stats */}
             <div
-              className={`${isStories ? "p-12 rounded-[3rem]" : "p-8 rounded-[2rem]"} ${config.accentClass} backdrop-blur-md border border-white/10`}
+              className={`${isStories ? "p-12 rounded-[3rem]" : "p-8 rounded-[2rem]"} ${config.accentClass} backdrop-blur-md border border-ink`}
             >
               <div className="flex items-baseline gap-4 mb-2">
-                <span className={`${isStories ? "text-9xl" : "text-7xl"} font-black tracking-tighter tabular-nums`}>
+                <span
+                  className={`${isStories ? "text-9xl" : "text-7xl"} font-black font-display tracking-tighter tabular-nums`}
+                >
                   {config.getVal(winner)}
                 </span>
                 <span
@@ -259,7 +263,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
                   {config.getDetail(winner)}
                 </span>
               </div>
-              <div className="h-4 w-full bg-black/10 rounded-full overflow-hidden">
+              <div className="h-4 w-full bg-ink-10 rounded-full overflow-hidden">
                 <div className="h-full bg-current w-full box-border border-4 border-transparent opacity-50"></div>
               </div>
             </div>
@@ -284,7 +288,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
                   ? t("dashboard.export.general.rankings")
                   : t("dashboard.export.general.wrapped")}
               </div>
-              <h1 className="text-5xl font-black tracking-tighter uppercase leading-none">
+              <h1 className="text-5xl font-black font-display tracking-tighter uppercase leading-none">
                 {data.chatName || t("navbar.defaultTitle")}
               </h1>
             </div>
@@ -299,7 +303,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
           <div className={`grid ${isStories ? "grid-cols-1 gap-12" : "grid-cols-2 gap-10"} flex-1`}>
             {/* Left Col: Rankings */}
             <div className="flex flex-col">
-              <h2 className="text-xs font-black uppercase tracking-[0.2em] opacity-40 mb-6 border-b border-white/10 pb-2">
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] opacity-40 mb-6 border-b border-ink pb-2">
                 {t("dashboard.participantStats.table.title")}
               </h2>
               <div className="space-y-4">
@@ -308,15 +312,15 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
                   .slice(0, 5)
                   .map((p, i) => (
                     <div key={p.id} className="flex items-center gap-4 group">
-                      <div className="font-black text-2xl opacity-20 w-8">{i + 1}</div>
+                      <div className="font-black font-display text-2xl opacity-20 w-8">{i + 1}</div>
                       <div className="flex-1">
                         <div className="flex justify-between items-baseline mb-1">
-                          <span className="font-bold text-xl tracking-tight uppercase truncate max-w-[180px]">
+                          <span className="font-bold text-xl font-display tracking-tight uppercase truncate max-w-[180px]">
                             {p.name}
                           </span>
-                          <span className="font-mono text-sm opacity-60">{formatNumber(p.msgCount)}</span>
+                          <span className="font-mono text-sm opacity-60 tabular-nums">{formatNumber(p.msgCount)}</span>
                         </div>
-                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-1.5 w-full bg-ink-5 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-current opacity-60 rounded-full"
                             style={{
@@ -341,12 +345,12 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
               {/* Group Stats */}
               <div className="space-y-8">
                 <div>
-                  <h2 className="text-xs font-black uppercase tracking-[0.2em] opacity-40 mb-4 border-b border-white/10 pb-2">
+                  <h2 className="text-xs font-black uppercase tracking-[0.2em] opacity-40 mb-4 border-b border-ink pb-2">
                     {t("dashboard.export.general.stats")}
                   </h2>
                   <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <div className="text-4xl font-black tracking-tighter leading-none mb-1">
+                      <div className="text-4xl font-black font-display tracking-tighter leading-none mb-1 tabular-nums">
                         {formatNumber(data.stats?.totalMessages || 0)}
                       </div>
                       <div className="text-[10px] font-bold opacity-40 uppercase tracking-wider">
@@ -354,7 +358,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
                       </div>
                     </div>
                     <div>
-                      <div className="text-4xl font-black tracking-tighter leading-none mb-1">
+                      <div className="text-4xl font-black font-display tracking-tighter leading-none mb-1 tabular-nums">
                         {formatNumber(data.stats?.activeDays || 0)}
                       </div>
                       <div className="text-[10px] font-bold opacity-40 uppercase tracking-wider">
@@ -367,14 +371,14 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
                 {/* Hot Topics */}
                 {data.topics && data.topics.length > 0 && (
                   <div>
-                    <h2 className="text-xs font-black uppercase tracking-[0.2em] opacity-40 mb-4 border-b border-white/10 pb-2">
+                    <h2 className="text-xs font-black uppercase tracking-[0.2em] opacity-40 mb-4 border-b border-ink pb-2">
                       {t("overview.topics.title")}
                     </h2>
                     <div className="flex flex-wrap gap-2">
                       {data.topics.slice(0, 8).map((topic, i) => (
                         <span
                           key={i}
-                          className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-bold uppercase tracking-tight opacity-70"
+                          className="px-3 py-1.5 rounded-lg bg-ink-5 border border-ink text-[11px] font-bold uppercase tracking-tight opacity-70"
                         >
                           #{topic.text}
                         </span>
@@ -385,7 +389,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
               </div>
 
               {/* Visualization Placeholder / Quote */}
-              <div className="mt-auto p-6 rounded-[2rem] bg-white/5 border border-white/10 italic opacity-40 text-sm leading-relaxed">
+              <div className="mt-auto p-6 rounded-[2rem] bg-ink-5 border border-ink italic opacity-40 text-sm leading-relaxed">
                 &quot;{t("dashboard.shareModal.subtitle")}&quot;
               </div>
             </div>
@@ -393,7 +397,7 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({ type, platform, insi
 
           {/* Footer */}
           <div
-            className={`${isStories ? "mt-16" : "mt-10"} flex justify-between items-end opacity-40 border-t border-white/10 pt-6`}
+            className={`${isStories ? "mt-16" : "mt-10"} flex justify-between items-end opacity-40 border-t border-ink pt-6`}
           >
             <div className="text-xs font-bold tracking-widest uppercase">{t("dashboard.export.general.title")}</div>
             <div className="text-[10px] font-mono uppercase tracking-widest">

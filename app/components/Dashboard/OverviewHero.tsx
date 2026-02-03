@@ -30,7 +30,9 @@ export const OverviewHero: React.FC<OverviewHeroProps> = ({ stats }) => {
             <MessageSquare className="w-5 h-5" />
             <span className="text-sm font-bold uppercase tracking-wider">{t("dashboard.hero.totalTitle")}</span>
           </div>
-          <h2 className="text-5xl md:text-7xl font-black tracking-tight">{formatNumber(stats.totalMessages)}</h2>
+          <h2 className="text-5xl md:text-7xl font-black tracking-tight font-display tabular-nums">
+            {formatNumber(stats.totalMessages)}
+          </h2>
         </div>
 
         <div className="relative z-10">
@@ -38,8 +40,8 @@ export const OverviewHero: React.FC<OverviewHeroProps> = ({ stats }) => {
         </div>
 
         {/* Decorative Circles */}
-        <div className="absolute -right-10 -top-10 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-black/5 rounded-full blur-2xl" />
+        <div className="absolute -right-10 -top-10 w-64 h-64 bg-ink-10 rounded-full blur-3xl" />
+        <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-ink-5 rounded-full blur-2xl" />
       </motion.div>
 
       {/* Daily Average */}
@@ -54,7 +56,9 @@ export const OverviewHero: React.FC<OverviewHeroProps> = ({ stats }) => {
             <Zap className="w-5 h-5" />
             <span className="text-sm font-bold uppercase tracking-wider">{t("dashboard.hero.dailyTitle")}</span>
           </div>
-          <h2 className="text-5xl md:text-7xl font-black tracking-tight">{Math.round(stats.avgDailyMessages)}</h2>
+          <h2 className="text-5xl md:text-7xl font-black tracking-tight font-display tabular-nums">
+            {Math.round(stats.avgDailyMessages)}
+          </h2>
         </div>
 
         <div className="relative z-10 flex items-center justify-between">

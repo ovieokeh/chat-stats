@@ -44,7 +44,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
           </span>
         </div>
 
-        <div className="text-4xl md:text-5xl font-semibold tabular-nums leading-none">{value}</div>
+        <div className="text-4xl md:text-5xl font-semibold font-display tabular-nums leading-none">{value}</div>
 
         {(delta || explanation) && (
           <div className="flex flex-col gap-1 mt-auto">

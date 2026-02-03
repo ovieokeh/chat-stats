@@ -1,18 +1,213 @@
+@import url("https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,600,700,900&f[]=cabinet-grotesk@400,500,600,700,800,900&f[]=general-sans@300,400,500,600,700&f[]=switzer@300,400,500,600,700&display=swap");
+
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-@plugin "daisyui";
+@plugin "daisyui" {
+  themes: bone --default, obsidian --prefersdark, ember;
+}
 @plugin "daisyui/theme" {
-  name: "nord";
+  name: "bone";
   default: true;
   prefersdark: false;
   color-scheme: light;
+  --color-base-100: hsl(40 30% 96%);
+  --color-base-200: hsl(0 0% 100%);
+  --color-base-300: hsl(40 10% 90%);
+  --color-base-content: hsl(240 10% 8%);
+  --color-primary: hsl(250 80% 55%);
+  --color-primary-content: hsl(0 0% 100%);
+  --color-secondary: hsl(165 80% 55%);
+  --color-secondary-content: hsl(240 10% 8%);
+  --color-accent: hsl(15 100% 55%);
+  --color-accent-content: hsl(0 0% 100%);
+  --color-neutral: hsl(240 8% 14%);
+  --color-neutral-content: hsl(0 0% 100%);
+  --color-info: hsl(210 100% 56%);
+  --color-info-content: hsl(0 0% 100%);
+  --color-success: hsl(145 65% 50%);
+  --color-success-content: hsl(0 0% 100%);
+  --color-warning: hsl(35 90% 55%);
+  --color-warning-content: hsl(0 0% 100%);
+  --color-error: hsl(0 72% 60%);
+  --color-error-content: hsl(0 0% 100%);
 }
 @plugin "daisyui/theme" {
-  name: "forest";
+  name: "obsidian";
   default: false;
   prefersdark: true;
   color-scheme: dark;
+  --color-base-100: hsl(240 10% 6%);
+  --color-base-200: hsl(240 8% 10%);
+  --color-base-300: hsl(240 8% 13%);
+  --color-base-content: hsl(0 0% 98%);
+  --color-primary: hsl(165 80% 55%);
+  --color-primary-content: hsl(240 10% 8%);
+  --color-secondary: hsl(250 80% 55%);
+  --color-secondary-content: hsl(0 0% 98%);
+  --color-accent: hsl(15 100% 55%);
+  --color-accent-content: hsl(0 0% 98%);
+  --color-neutral: hsl(240 8% 14%);
+  --color-neutral-content: hsl(0 0% 98%);
+  --color-info: hsl(210 100% 56%);
+  --color-info-content: hsl(0 0% 98%);
+  --color-success: hsl(145 65% 50%);
+  --color-success-content: hsl(0 0% 98%);
+  --color-warning: hsl(35 90% 55%);
+  --color-warning-content: hsl(0 0% 98%);
+  --color-error: hsl(0 72% 60%);
+  --color-error-content: hsl(0 0% 98%);
+}
+@plugin "daisyui/theme" {
+  name: "ember";
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+  --color-base-100: hsl(0 0% 3%);
+  --color-base-200: hsl(0 0% 6%);
+  --color-base-300: hsl(0 0% 9%);
+  --color-base-content: hsl(0 0% 98%);
+  --color-primary: hsl(15 100% 55%);
+  --color-primary-content: hsl(0 0% 98%);
+  --color-secondary: hsl(165 80% 55%);
+  --color-secondary-content: hsl(0 0% 98%);
+  --color-accent: hsl(250 80% 55%);
+  --color-accent-content: hsl(0 0% 98%);
+  --color-neutral: hsl(0 0% 12%);
+  --color-neutral-content: hsl(0 0% 98%);
+  --color-info: hsl(210 100% 56%);
+  --color-info-content: hsl(0 0% 98%);
+  --color-success: hsl(145 65% 50%);
+  --color-success-content: hsl(0 0% 98%);
+  --color-warning: hsl(35 90% 55%);
+  --color-warning-content: hsl(0 0% 98%);
+  --color-error: hsl(0 72% 60%);
+  --color-error-content: hsl(0 0% 98%);
+}
+
+:root[data-theme="bone"],
+[data-theme="bone"] {
+  color-scheme: light;
+  --color-base-100: hsl(40 30% 96%);
+  --color-base-200: hsl(0 0% 100%);
+  --color-base-300: hsl(40 10% 90%);
+  --color-base-content: hsl(240 10% 8%);
+  --color-primary: hsl(250 80% 55%);
+  --color-primary-content: hsl(0 0% 100%);
+  --color-secondary: hsl(165 80% 55%);
+  --color-secondary-content: hsl(240 10% 8%);
+  --color-accent: hsl(15 100% 55%);
+  --color-accent-content: hsl(0 0% 100%);
+  --color-neutral: hsl(240 8% 14%);
+  --color-neutral-content: hsl(0 0% 100%);
+  --color-info: hsl(210 100% 56%);
+  --color-info-content: hsl(0 0% 100%);
+  --color-success: hsl(145 65% 50%);
+  --color-success-content: hsl(0 0% 100%);
+  --color-warning: hsl(35 90% 55%);
+  --color-warning-content: hsl(0 0% 100%);
+  --color-error: hsl(0 72% 60%);
+  --color-error-content: hsl(0 0% 100%);
+}
+
+:root[data-theme="obsidian"],
+[data-theme="obsidian"] {
+  color-scheme: dark;
+  --color-base-100: hsl(240 10% 6%);
+  --color-base-200: hsl(240 8% 10%);
+  --color-base-300: hsl(240 8% 13%);
+  --color-base-content: hsl(0 0% 98%);
+  --color-primary: hsl(165 80% 55%);
+  --color-primary-content: hsl(240 10% 8%);
+  --color-secondary: hsl(250 80% 55%);
+  --color-secondary-content: hsl(0 0% 98%);
+  --color-accent: hsl(15 100% 55%);
+  --color-accent-content: hsl(0 0% 98%);
+  --color-neutral: hsl(240 8% 14%);
+  --color-neutral-content: hsl(0 0% 98%);
+  --color-info: hsl(210 100% 56%);
+  --color-info-content: hsl(0 0% 98%);
+  --color-success: hsl(145 65% 50%);
+  --color-success-content: hsl(0 0% 98%);
+  --color-warning: hsl(35 90% 55%);
+  --color-warning-content: hsl(0 0% 98%);
+  --color-error: hsl(0 72% 60%);
+  --color-error-content: hsl(0 0% 98%);
+}
+
+:root[data-theme="ember"],
+[data-theme="ember"] {
+  color-scheme: dark;
+  --color-base-100: hsl(0 0% 3%);
+  --color-base-200: hsl(0 0% 6%);
+  --color-base-300: hsl(0 0% 9%);
+  --color-base-content: hsl(0 0% 98%);
+  --color-primary: hsl(15 100% 55%);
+  --color-primary-content: hsl(0 0% 98%);
+  --color-secondary: hsl(165 80% 55%);
+  --color-secondary-content: hsl(0 0% 98%);
+  --color-accent: hsl(250 80% 55%);
+  --color-accent-content: hsl(0 0% 98%);
+  --color-neutral: hsl(0 0% 12%);
+  --color-neutral-content: hsl(0 0% 98%);
+  --color-info: hsl(210 100% 56%);
+  --color-info-content: hsl(0 0% 98%);
+  --color-success: hsl(145 65% 50%);
+  --color-success-content: hsl(0 0% 98%);
+  --color-warning: hsl(35 90% 55%);
+  --color-warning-content: hsl(0 0% 98%);
+  --color-error: hsl(0 72% 60%);
+  --color-error-content: hsl(0 0% 98%);
+}
+
+:root {
+  --font-display: "Satoshi", "Cabinet Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "General Sans", "Switzer", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+.tabular-nums,
+.stat-value,
+[data-tabular="true"] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.bg-ink-5 {
+  background-color: color-mix(in oklab, currentColor 5%, transparent);
+}
+
+.bg-ink-10 {
+  background-color: color-mix(in oklab, currentColor 10%, transparent);
+}
+
+.bg-ink-20 {
+  background-color: color-mix(in oklab, currentColor 20%, transparent);
+}
+
+.border-ink {
+  border-color: color-mix(in oklab, currentColor 12%, transparent);
 }
 
 /* Tiptap Task List Styles */

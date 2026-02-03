@@ -57,9 +57,9 @@ const CustomRadarTooltip = ({
     const sortedItems = [...payload].sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0));
 
     return (
-      <div className="bg-neutral/95 backdrop-blur-md text-neutral-content rounded-xl p-4 shadow-xl border border-white/10 text-xs min-w-[200px]">
-        <div className="mb-3 border-b border-white/10 pb-2">
-          <p className="font-black text-sm text-white">{data.subject}</p>
+      <div className="bg-neutral/95 backdrop-blur-md text-neutral-content rounded-xl p-4 shadow-xl border border-ink text-xs min-w-[200px]">
+        <div className="mb-3 border-b border-ink pb-2">
+          <p className="font-black text-sm text-neutral-content">{data.subject}</p>
           <p className="opacity-60 text-[10px] uppercase font-bold tracking-wider">{data.description}</p>
         </div>
         <div className="space-y-1.5">
@@ -74,7 +74,7 @@ const CustomRadarTooltip = ({
                     className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="font-bold text-gray-200">{item.name}</span>
+                  <span className="font-bold text-neutral-content/80">{item.name}</span>
                 </div>
                 <span className="font-mono opacity-80">{rawValue}</span>
               </div>
@@ -297,7 +297,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
         label: t("dashboard.participantStats.badges.ghost.label"),
         description: t("dashboard.participantStats.badges.ghost.description"),
         icon: <Ghost size={12} />,
-        color: "bg-slate-600 text-white",
+        color: "bg-neutral text-neutral-content",
       });
     if (isTop("doubleTextCount"))
       badges.push({
@@ -305,7 +305,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
         label: t("dashboard.participantStats.badges.doubleText.label"),
         description: t("dashboard.participantStats.badges.doubleText.description"),
         icon: <Copy size={12} />,
-        color: "bg-orange-500 text-white",
+        color: "bg-warning text-warning-content",
       });
 
     return badges;
@@ -426,7 +426,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                       return (
                         <foreignObject x={cx - 15} y={cy - 15} width={30} height={30}>
                           <div
-                            className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-[8px] font-black text-white shadow-md ring-2 ring-white dark:ring-base-100 transform hover:scale-125 transition-transform cursor-pointer"
+                            className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-[8px] font-black text-base-content shadow-md ring-2 ring-base-100 transform hover:scale-125 transition-transform cursor-pointer"
                             style={{ backgroundColor: payload.color }}
                             title={payload.name}
                           >
@@ -492,11 +492,11 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                       {/* Top Row: Rank, Avatar, Name, Impact */}
                       <div className="flex items-center gap-3">
                         {/* Rank */}
-                        <div className="font-black text-lg opacity-30 w-6 text-center">{index + 1}</div>
+                        <div className="font-black font-display text-lg opacity-30 w-6 text-center">{index + 1}</div>
 
                         {/* Avatar */}
                         <div className="relative shrink-0">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-sm font-black text-white shadow-sm ring-2 ring-white dark:ring-base-100">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-sm font-black text-primary-content shadow-sm ring-2 ring-base-100">
                             {(isPrivacyMode ? "?" : p.name.charAt(0)).toUpperCase()}
                           </div>
                           {p.ghostCount > 5 && (
@@ -504,7 +504,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                               className="absolute -bottom-1 -right-1 bg-base-100 rounded-full p-0.5 border border-base-200"
                               title={t("dashboard.participantStats.table.tooltips.ghost")}
                             >
-                              <Ghost size={10} className="text-slate-400" />
+                              <Ghost size={10} className="text-base-content/40" />
                             </div>
                           )}
                         </div>
@@ -525,7 +525,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                         {/* Impact Score */}
                         <div className="text-right shrink-0">
                           <div className="inline-flex flex-col items-end">
-                            <span className="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary leading-none">
+                            <span className="text-xl font-black font-display bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary leading-none">
                               {p.carryScore.toFixed(0)}
                             </span>
                           </div>
@@ -542,8 +542,8 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                             else if (b.id === "yap") softClass = "bg-secondary/10 text-secondary";
                             else if (b.id === "speed") softClass = "bg-success/10 text-success";
                             else if (b.id === "instigator") softClass = "bg-info/10 text-info";
-                            else if (b.id === "ghost") softClass = "bg-slate-500/10 text-slate-500";
-                            else if (b.id === "copy") softClass = "bg-orange-500/10 text-orange-500";
+                            else if (b.id === "ghost") softClass = "bg-neutral/10 text-neutral";
+                            else if (b.id === "copy") softClass = "bg-warning/10 text-warning";
 
                             return (
                               <div
@@ -565,7 +565,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                           <span className="opacity-50 text-[10px] uppercase font-bold tracking-wider">
                             {t("dashboard.participantStats.table.headers.volume")}
                           </span>
-                          <div className="font-semibold">
+                          <div className="font-semibold font-display tabular-nums">
                             {p.msgCount.toLocaleString()}{" "}
                             <span className="opacity-50 text-[10px]">({p.messageShare.toFixed(1)}%)</span>
                           </div>
@@ -575,14 +575,16 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                           <span className="opacity-50 text-[10px] uppercase font-bold tracking-wider">
                             {t("dashboard.participantStats.table.headers.speed")}
                           </span>
-                          <div className="font-semibold">{formatDurationHuman(p.medianReplyTime)}</div>
+                          <div className="font-semibold font-display tabular-nums">
+                            {formatDurationHuman(p.medianReplyTime)}
+                          </div>
                         </div>
                         {/* Yap */}
                         <div className="flex flex-col gap-1 text-right">
                           <span className="opacity-50 text-[10px] uppercase font-bold tracking-wider">
                             {t("dashboard.participantStats.table.headers.yap")}
                           </span>
-                          <div className="font-semibold">{p.yapIndex.toFixed(1)}</div>
+                          <div className="font-semibold font-display tabular-nums">{p.yapIndex.toFixed(1)}</div>
                         </div>
                       </div>
 
@@ -598,14 +600,14 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                     {/* --- Desktop View (Table Row) --- */}
                     <div className="hidden md:grid grid-cols-12 gap-4 p-4 items-center">
                       {/* Rank */}
-                      <div className="col-span-1 text-center font-black text-lg opacity-30 group-hover:opacity-100 transition-opacity">
+                      <div className="col-span-1 text-center font-black font-display text-lg opacity-30 group-hover:opacity-100 transition-opacity">
                         {index + 1}
                       </div>
 
                       {/* Participant Info */}
                       <div className="col-span-4 flex gap-3 items-center">
                         <div className="relative h-fit shrink-0">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-sm font-black text-white shadow-sm ring-2 ring-white dark:ring-base-100">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-sm font-black text-primary-content shadow-sm ring-2 ring-base-100">
                             {(isPrivacyMode ? "?" : p.name.charAt(0)).toUpperCase()}
                           </div>
                           {/* Status Indicator (e.g. Ghost) */}
@@ -614,7 +616,7 @@ export const ParticipantStats: React.FC<ParticipantStatsProps> = ({ participants
                               className="absolute -bottom-1 -right-1 bg-base-100 rounded-full p-0.5"
                               title={t("dashboard.participantStats.table.tooltips.ghost")}
                             >
-                              <Ghost size={12} className="text-slate-400" />
+                              <Ghost size={12} className="text-base-content/40" />
                             </div>
                           )}
                         </div>

@@ -32,7 +32,7 @@ export const KpiTile: React.FC<KpiTileProps> = ({ label, value, trend, trendLabe
             </span>
           )}
         </div>
-        <div className="text-2xl md:text-3xl font-semibold tabular-nums mt-1">{value}</div>
+        <div className="text-2xl md:text-3xl font-semibold font-display tabular-nums mt-1">{value}</div>
       </div>
     </div>
   );

@@ -2,10 +2,11 @@
 
 import React from "react";
 import Link from "next/link";
-import { ArrowLeft, Settings, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Settings, Eye, EyeOff, Sun, Moon, Flame } from "lucide-react";
 import { format } from "date-fns";
 import { usePrivacy } from "../../context/PrivacyContext";
 import { useText } from "../../hooks/useText";
+import { useTheme } from "next-themes";
 
 interface NavbarProps {
   filename: string;
@@ -16,6 +17,17 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ filename, importedAt, onSettingsClick }) => {
   const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
   const { t } = useText();
+  const { theme, resolvedTheme, setTheme } = useTheme();
+
+  const currentTheme =
+    theme === "system" ? (resolvedTheme === "dark" ? "obsidian" : "bone") : (theme as string);
+  const themeOrder = ["bone", "obsidian", "ember"];
+  const currentThemeIndex = Math.max(0, themeOrder.indexOf(currentTheme));
+  const nextTheme = themeOrder[(currentThemeIndex + 1) % themeOrder.length];
+
+  const themeLabel =
+    currentTheme === "bone" ? "Bone" : currentTheme === "ember" ? "Ember" : "Obsidian";
+  const ThemeIcon = currentTheme === "bone" ? Sun : currentTheme === "ember" ? Flame : Moon;
 
   return (
     <nav className="sticky top-0 z-30 w-full border-b border-base-200 bg-base-100/80 backdrop-blur-md">
@@ -35,6 +47,14 @@ export const Navbar: React.FC<NavbarProps> = ({ filename, importedAt, onSettings
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            className="btn btn-ghost btn-sm gap-2 normal-case font-medium opacity-70 hover:opacity-100"
+            onClick={() => setTheme(nextTheme)}
+            title={`Theme: ${themeLabel}`}
+          >
+            <ThemeIcon className="w-4 h-4" />
+            <span className="hidden sm:inline">{themeLabel}</span>
+          </button>
           <button
             className={`btn btn-sm gap-2 normal-case font-medium ${
               isPrivacyMode ? "btn-primary" : "btn-ghost opacity-70"

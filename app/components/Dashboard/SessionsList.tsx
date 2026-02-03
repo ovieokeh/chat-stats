@@ -122,7 +122,7 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
                 const initiatorName = session.initiatorId
                   ? participantMap.get(session.initiatorId)
                   : t("sessions.unknown");
-                const colorClass = initiatorName ? getAvatarColor(initiatorName) : "bg-base-300";
+                const colorClass = initiatorName ? getAvatarColor(initiatorName) : "bg-base-300 text-base-content";
 
                 return (
                   <div
@@ -133,7 +133,7 @@ export const SessionsList: React.FC<SessionsListProps> = ({ importId }) => {
                     {/* Compact Initiator */}
                     <div className="flex items-center gap-3 w-40 shrink-0">
                       <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black text-white shadow-sm ${colorClass}`}
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black shadow-sm ${colorClass}`}
                       >
                         {initiatorName?.substring(0, 1).toUpperCase()}
                       </div>
